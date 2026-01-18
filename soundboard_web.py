@@ -104,12 +104,18 @@ async def callback(request: Request, code: str = None):
 @router.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/")
+    # Redirect to the correct login URL with prefix
+    prefix = api_prefix.rstrip("/")
+    login_url = f"{prefix}/login" if prefix else "/login"
+    return RedirectResponse(url=login_url)
 
 def require_login(request: Request):
     user = request.session.get("user")
     if not user:
-        return RedirectResponse(url="/login")
+        # Redirect to the correct login URL with prefix
+        prefix = api_prefix.rstrip("/")
+        login_url = f"{prefix}/login" if prefix else "/login"
+        return RedirectResponse(url=login_url)
     return user
 
 @router.get("/", response_class=HTMLResponse)

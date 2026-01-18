@@ -19,26 +19,8 @@ from fastapi import APIRouter
 app = FastAPI(root_path=ROOT_PATH)
 router = APIRouter()
 
-
-import os
-import sqlite3
-import secrets
-import urllib.parse
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Response, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.security import OAuth2AuthorizationCodeBearer
-from starlette.middleware.sessions import SessionMiddleware
-import httpx
-from dotenv import load_dotenv
-
 # Load environment variables from .env file
 load_dotenv()
-
-
-# Standard FastAPI app without API prefix logic
-from fastapi import APIRouter
-app = FastAPI()
-router = APIRouter()
 
 # Add session middleware for login state
 app.add_middleware(SessionMiddleware, secret_key=secrets.token_urlsafe(32))
@@ -138,6 +120,7 @@ def main(request: Request):
     user = request.session.get("user")
     if not user:
         root_path = request.scope.get("root_path", "")
+        print(root_path)
         return RedirectResponse(url=f"{root_path}/login")
     with sqlite3.connect(DB_PATH) as conn:
         files = conn.execute("SELECT filename FROM sounds").fetchall()

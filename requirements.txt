@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+dotenv
+discord.py>=2.0.0
+httpx
+python-dotenv

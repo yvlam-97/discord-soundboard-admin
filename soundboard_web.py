@@ -1,4 +1,24 @@
 
+import os
+import sqlite3
+import secrets
+import urllib.parse
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request, Response, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.security import OAuth2AuthorizationCodeBearer
+from starlette.middleware.sessions import SessionMiddleware
+import httpx
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Use FastAPI root_path for subpath deployment
+ROOT_PATH = os.getenv("SOUNDBOARD_WEB_ROOT_PATH", "")
+from fastapi import APIRouter
+app = FastAPI(root_path=ROOT_PATH)
+router = APIRouter()
+
 
 import os
 import sqlite3
@@ -15,8 +35,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
- # Make API prefix configurable via SOUNDBOARD_WEB_PREFIX
-api_prefix = os.getenv("SOUNDBOARD_WEB_PREFIX", "") or ""
+# Standard FastAPI app without API prefix logic
 from fastapi import APIRouter
 app = FastAPI()
 router = APIRouter()
@@ -104,25 +123,22 @@ async def callback(request: Request, code: str = None):
 @router.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    # Redirect to the correct login URL with prefix
-    prefix = api_prefix.rstrip("/")
-    login_url = f"{prefix}/login" if prefix else "/login"
-    return RedirectResponse(url=login_url)
+    root_path = request.scope.get("root_path", "")
+    return RedirectResponse(url=f"{root_path}/login")
 
 def require_login(request: Request):
     user = request.session.get("user")
     if not user:
-        # Redirect to the correct login URL with prefix
-        prefix = api_prefix.rstrip("/")
-        login_url = f"{prefix}/login" if prefix else "/login"
-        return RedirectResponse(url=login_url)
+        root_path = request.scope.get("root_path", "")
+        return RedirectResponse(url=f"{root_path}/login")
     return user
 
 @router.get("/", response_class=HTMLResponse)
 def main(request: Request):
     user = request.session.get("user")
     if not user:
-        return RedirectResponse(url="/login")
+        root_path = request.scope.get("root_path", "")
+        return RedirectResponse(url=f"{root_path}/login")
     with sqlite3.connect(DB_PATH) as conn:
         files = conn.execute("SELECT filename FROM sounds").fetchall()
         interval_row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
@@ -374,8 +390,8 @@ async def set_interval(request: Request, interval: int = Form(...)):
     return RedirectResponse(url="/", status_code=303)
 
 
-# Mount the router at the API prefix (which matches root_path for subpath deployment)
-app.include_router(router, prefix=api_prefix)
+# Mount the router at root
+app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn

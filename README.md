@@ -73,12 +73,14 @@ All configuration is handled via environment variables in your `.env` file:
 | `GUILD_ID`              | (Optional) Your Discord server's guild ID (for some features)    |                                  |
 | `SOUNDBOARD_WEB_HOST`   | Host for the web admin (FastAPI/uvicorn)                         | 127.0.0.1                        |
 | `SOUNDBOARD_WEB_PORT`   | Port for the web admin (FastAPI/uvicorn)                         | 8080                             |
-| `SOUNDBOARD_WEB_PREFIX`     | (Optional) API prefix for all endpoints (for subpath mounting | (empty string for root)          |
+| `SOUNDBOARD_WEB_ROOT_PATH` | (Optional) Root path for FastAPI app (for subpath mounting, e.g. /sjefbot) | (empty string for root)          |
+
 
 ### Sound Interval
 
 - The bot's sound playback interval is configurable from the web admin page.
 - **Minimum allowed interval is 30 seconds.**
+
 
 
 **Notes:**
@@ -87,7 +89,8 @@ All configuration is handled via environment variables in your `.env` file:
 - `SESSION_SECRET` must be the same for all web server instances to keep sessions valid.
 - `DISCORD_REDIRECT_URI` must match the value set in your Discord developer portal.
 - The minimum allowed interval for bot sound playback is 30 seconds.
-- Set `SOUNDBOARD_WEB_PREFIX=/sjefbot` in your `.env` to serve the app at a subpath (e.g., https://yourdomain/sjefbot/), or leave it empty for root. Restart your app after changing this value.
+- Set `SOUNDBOARD_WEB_ROOT_PATH=/sjefbot` in your `.env` to serve the app at a subpath (e.g., https://yourdomain/sjefbot/), or leave it empty for root. Restart your app after changing this value.
+
 
 ## Security Notes
 - Sessions are secured with a secret key from `.env` (`SESSION_SECRET`).

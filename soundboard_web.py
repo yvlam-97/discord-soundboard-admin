@@ -14,9 +14,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Make root_path configurable via SOUNDBOARD_WEB_ROOT_PATH
-root_path = os.getenv("SOUNDBOARD_WEB_ROOT_PATH", "")
-app = FastAPI(root_path=root_path)
+
+ # Make API prefix configurable via SOUNDBOARD_WEB_PREFIX
+api_prefix = os.getenv("SOUNDBOARD_WEB_PREFIX", "") or ""
+from fastapi import APIRouter
+app = FastAPI()
+router = APIRouter()
 
 # Add session middleware for login state
 app.add_middleware(SessionMiddleware, secret_key=secrets.token_urlsafe(32))
@@ -60,7 +63,7 @@ def init_db():
             conn.execute("INSERT INTO interval_config (id, interval) VALUES (1, 30)")
 init_db()
 
-@app.get("/login")
+@router.get("/login")
 def login(request: Request):
     params = {
         "client_id": DISCORD_CLIENT_ID,
@@ -72,7 +75,7 @@ def login(request: Request):
     url = f"{DISCORD_OAUTH_AUTHORIZE_URL}?{urllib.parse.urlencode(params)}"
     return RedirectResponse(url)
 
-@app.get("/callback")
+@router.get("/callback")
 async def callback(request: Request, code: str = None):
     if not code:
         return HTMLResponse("<h2>No code provided</h2>", status_code=400)
@@ -98,7 +101,7 @@ async def callback(request: Request, code: str = None):
         request.session["user"] = user_json
     return RedirectResponse(url="/")
 
-@app.get("/logout")
+@router.get("/logout")
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/")
@@ -109,7 +112,7 @@ def require_login(request: Request):
         return RedirectResponse(url="/login")
     return user
 
-@app.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 def main(request: Request):
     user = request.session.get("user")
     if not user:
@@ -304,7 +307,7 @@ def main(request: Request):
     """
 
 # Add endpoint for renaming sounds (must be at module level, not inside HTML)
-@app.post("/rename")
+@router.post("/rename")
 async def rename_file(request: Request, old_filename: str = Form(...), new_filename: str = Form(...)):
     user = require_login(request)
     # Ensure .mp3 extension is present
@@ -324,7 +327,7 @@ async def rename_file(request: Request, old_filename: str = Form(...), new_filen
         conn.execute("UPDATE sounds SET filename = ? WHERE filename = ?", (new_filename, old_filename))
     return RedirectResponse(url="/", status_code=303)
 
-@app.post("/delete")
+@router.post("/delete")
 async def delete_file(request: Request, filename: str = Form(...)):
     user = require_login(request)
     with sqlite3.connect(DB_PATH) as conn:
@@ -332,7 +335,7 @@ async def delete_file(request: Request, filename: str = Form(...)):
     return RedirectResponse(url="/", status_code=303)
 
 
-@app.post("/upload")
+@router.post("/upload")
 async def upload_file(request: Request, file: UploadFile = File(...)):
     user = require_login(request)
     if not file.filename.lower().endswith(".mp3"):
@@ -347,7 +350,7 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
             raise HTTPException(status_code=500, detail=str(e))
     return RedirectResponse(url="/", status_code=303)
 
-@app.get("/download/{filename}")
+@router.get("/download/{filename}")
 def download_file(filename: str):
     with sqlite3.connect(DB_PATH) as conn:
         row = conn.execute("SELECT data FROM sounds WHERE filename = ?", (filename,)).fetchone()
@@ -355,7 +358,7 @@ def download_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found.")
     return StreamingResponse(iter([row[0]]), media_type="audio/mp3")
 
-@app.post("/set-interval")
+@router.post("/set-interval")
 async def set_interval(request: Request, interval: int = Form(...)):
     user = require_login(request)
     if interval < 30 or interval > 3600:
@@ -363,6 +366,10 @@ async def set_interval(request: Request, interval: int = Form(...)):
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("UPDATE interval_config SET interval = ? WHERE id = 1", (interval,))
     return RedirectResponse(url="/", status_code=303)
+
+
+# Mount the router at the API prefix (which matches root_path for subpath deployment)
+app.include_router(router, prefix=api_prefix)
 
 if __name__ == "__main__":
     import uvicorn

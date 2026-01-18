@@ -100,7 +100,8 @@ async def callback(request: Request, code: str = None):
             return HTMLResponse("<h2>Failed to fetch user info</h2>", status_code=400)
         user_json = user_resp.json()
         request.session["user"] = user_json
-    return RedirectResponse(url="/")
+        root_path = request.scope.get("root_path", "")
+    return RedirectResponse(url=f"{root_path}/")
 
 @router.get("/logout")
 def logout(request: Request):
@@ -120,7 +121,6 @@ def main(request: Request):
     user = request.session.get("user")
     if not user:
         root_path = request.scope.get("root_path", "")
-        print(root_path)
         return RedirectResponse(url=f"{root_path}/login")
     with sqlite3.connect(DB_PATH) as conn:
         files = conn.execute("SELECT filename FROM sounds").fetchall()

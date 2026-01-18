@@ -73,6 +73,7 @@ All configuration is handled via environment variables in your `.env` file:
 | `GUILD_ID`              | (Optional) Your Discord server's guild ID (for some features)    |                                  |
 | `SOUNDBOARD_WEB_HOST`   | Host for the web admin (FastAPI/uvicorn)                         | 127.0.0.1                        |
 | `SOUNDBOARD_WEB_PORT`   | Port for the web admin (FastAPI/uvicorn)                         | 8080                             |
+| `SOUNDBOARD_WEB_ROOT_PATH` | (Optional) Root path for FastAPI app (for subpath mounting) | (empty string for root)          |
 
 ### Sound Interval
 

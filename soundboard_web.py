@@ -14,7 +14,9 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-app = FastAPI()
+# Make root_path configurable via SOUNDBOARD_WEB_ROOT_PATH
+root_path = os.getenv("SOUNDBOARD_WEB_ROOT_PATH", "")
+app = FastAPI(root_path=root_path)
 
 # Add session middleware for login state
 app.add_middleware(SessionMiddleware, secret_key=secrets.token_urlsafe(32))

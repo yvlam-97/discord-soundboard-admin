@@ -131,7 +131,7 @@ def main(request: Request):
         <li class="sound-item">
             <span class="sound-filename">{fname[0]}</span>
             <div class="sound-actions">
-                <a class="play-btn" href="/download/{fname[0]}" title="Play" target="_blank">▶️</a>
+                <a class="play-btn" href="download/{fname[0]}" title="Play" target="_blank">▶️</a>
                 <form class="rename-form" action="rename" method="post" style="display:inline; margin:0; padding:0;">
                     <input type="hidden" name="old_filename" value="{fname[0]}">
                     <input class="rename-input" type="text" name="new_filename" value="{fname[0]}" maxlength="64" required style="width:110px; font-size:0.95em; margin-right:4px;">

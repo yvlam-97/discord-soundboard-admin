@@ -132,12 +132,12 @@ def main(request: Request):
             <span class="sound-filename">{fname[0]}</span>
             <div class="sound-actions">
                 <a class="play-btn" href="/download/{fname[0]}" title="Play" target="_blank">▶️</a>
-                <form class="rename-form" action="{root_path}/rename" method="post" style="display:inline; margin:0; padding:0;">
+                <form class="rename-form" action="/rename" method="post" style="display:inline; margin:0; padding:0;">
                     <input type="hidden" name="old_filename" value="{fname[0]}">
                     <input class="rename-input" type="text" name="new_filename" value="{fname[0]}" maxlength="64" required style="width:110px; font-size:0.95em; margin-right:4px;">
                     <button class="rename-btn" type="submit" title="Rename">✏️</button>
                 </form>
-                <form class="delete-form" action="{root_path}/delete" method="post">
+                <form class="delete-form" action="/delete" method="post">
                     <input type="hidden" name="filename" value="{fname[0]}">
                     <button class="delete-btn" type="submit" title="Delete">🗑️</button>
                 </form>
@@ -293,13 +293,13 @@ def main(request: Request):
                 <span style="font-size:1.1em; font-weight:bold;">{username}#{discriminator}</span>
             </div>
             <h2 style="margin-bottom: 10px;">Soundboard Admin</h2>
-            <form action="{root_path}/set-interval" method="post" style="margin-bottom: 28px; display: flex; align-items: center; gap: 12px;">
+            <form action="/set-interval" method="post" style="margin-bottom: 28px; display: flex; align-items: center; gap: 12px;">
                 <label for="interval" style="color:#ffb347; font-weight:bold; font-size:1.08em;">Bot Sound Interval (seconds):</label>
                 <input id="interval" name="interval" type="number" min="30" max="3600" value="{interval_value}" style="width:80px; font-size:1.08em;">
                 <input type="submit" value="Update" style="background:#ffb347; color:#23272b; border:none; border-radius:6px; padding:7px 18px; font-weight:bold; font-size:1.08em; cursor:pointer;">
                 <span style="color:#aaa; font-size:0.98em; margin-left:10px;">Controls how often the bot plays a sound in voice channels. (Minimum: 30s)</span>
             </form>
-            <form action="{root_path}/upload" enctype="multipart/form-data" method="post" style="margin-bottom: 30px;">
+            <form action="upload" enctype="multipart/form-data" method="post" style="margin-bottom: 30px;">
                 <label for="file" style="color:#ffb347; font-weight:bold;">Upload New Sound (.mp3):</label>
                 <input name="file" id="file" type="file" accept="audio/mp3" required style="margin-left:10px;">
                 <input type="submit" value="Upload" style="background:#ffb347; color:#23272b; border:none; border-radius:6px; padding:7px 18px; font-weight:bold; cursor:pointer;">

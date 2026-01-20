@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Soundboard Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
+            background: #313338;
+            color: #dbdee1;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 48px auto;
+            background: #23272a;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px #000a;
+            padding: 36px 32px 28px 32px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-right: 16px;
+            border: 2px solid #5865f2;
+            background: #23272a;
+        }
+
+        h2,
+        h3 {
+            color: #5865f2;
+            margin-top: 0;
+            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        form {
+            margin-bottom: 24px;
+        }
+
+        input[type="file"] {
+            background: #23272a;
+            color: #dbdee1;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        input[type="submit"],
+        button {
+            background: #5865f2;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
+            box-shadow: 0 2px 8px #23272a33;
+        }
+
+        input[type="submit"]:hover,
+        button:hover {
+            background: #4752c4;
+            color: #fff;
+            box-shadow: 0 4px 16px #23272a55;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sound-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #2b2d31;
+            border-bottom: 1px solid #23272a;
+            padding: 12px 0;
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .sound-filename {
+            flex: 1;
+            font-size: 1.12em;
+            word-break: break-all;
+            color: #fff;
+        }
+
+        .sound-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .play-btn {
+            font-size: 1.3em;
+            text-decoration: none;
+            color: #57f287;
+            transition: color 0.2s;
+            margin: 0;
+            padding: 0 4px;
+        }
+
+        .play-btn:hover {
+            color: #43b581;
+        }
+
+        .rename-form {
+            display: inline;
+            margin: 0;
+            padding: 0;
+        }
+
+        .rename-input {
+            background: #23272a;
+            color: #dbdee1;
+            border: 1px solid #5865f2;
+            border-radius: 6px;
+            padding: 2px 8px;
+            margin-right: 2px;
+            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
+            width: 220px;
+        }
+
+        .rename-form.active .rename-input {
+            display: inline-block;
+        }
+
+        .rename-btn,
+        .confirm-rename-btn,
+        .cancel-rename-btn {
+            background: #5865f2;
+            color: #fff;
+            border: none;
+            font-size: 1.1em;
+            cursor: pointer;
+            padding: 0 8px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px #23272a33;
+        }
+
+        .rename-btn:hover,
+        .confirm-rename-btn:hover,
+        .cancel-rename-btn:hover {
+            background: #4752c4;
+            color: #fff;
+            box-shadow: 0 4px 16px #23272a55;
+        }
+
+        .confirm-rename-btn {
+            margin-left: 4px;
+            background: #57f287;
+            color: #23272a;
+        }
+
+        .confirm-rename-btn:hover {
+            background: #43b581;
+            color: #fff;
+        }
+
+        .cancel-rename-btn {
+            margin-left: 4px;
+            background: #ed4245;
+            color: #fff;
+        }
+
+        .cancel-rename-btn:hover {
+            background: #a12d2f;
+            color: #fff;
+        }
+
+        .delete-form {
+            display: inline;
+            margin: 0;
+            padding: 0;
+        }
+
+        .delete-btn {
+            background: #ed4245;
+            color: #fff;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0 8px;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px #23272a33;
+        }
+
+        .delete-btn:hover {
+            background: #a12d2f;
+            color: #fff;
+            box-shadow: 0 4px 16px #23272a55;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="user-info" style="margin-bottom: 24px;">
+            {% if avatar_url %}
+            <img class="user-avatar" src="{{ avatar_url }}" alt="avatar">
+            {% endif %}
+            <span style="font-size:1.1em; font-weight:bold;">{{ username }}</span>
+        </div>
+        <h2 style="margin-bottom: 10px;">Soundboard Admin</h2>
+        <form action="set-interval" method="post"
+            style="margin-bottom: 6px; display: flex; align-items: center; gap: 12px;">
+            <label for="interval" style="color:#dbdee1; font-weight:500; font-size:1.08em;">Bot sound delay
+                (seconds):</label>
+            <input id="interval" name="interval" type="number" min="30" max="3600" value="{{ interval_value }}"
+                style="width:100px; font-size:1.08em; background:#23272a; color:#dbdee1; border:1px solid #444; border-radius:6px; margin-left:8px;">
+            <input type="submit" value="Save" style="margin-left:8px;">
+        </form>
+        <div style="margin-bottom:12px; color:#aaa; font-size:0.98em; margin-top:-8px;">
+            <span style="color:#ed4245;">Minimum: 30 seconds</span>
+        </div>
+        </form>
+        <form action="upload" enctype="multipart/form-data" method="post"
+            style="margin-bottom: 30px; display: flex; align-items: center; gap: 12px;">
+            <label for="file" style="color:#dbdee1; font-weight:500;">Upload New Sound (.mp3):</label>
+            <input name="file" id="file" type="file" accept="audio/mp3" required style="margin-left:10px;">
+            <input type="submit" value="Upload">
+        </form>
+        <h3 style="margin-bottom: 10px;">Available Sound Effects</h3>
+        <ul>
+            {% for fname in files %}
+            <li class="sound-item">
+                <span class="sound-filename">{{ fname }}</span>
+                <div class="sound-actions">
+                    <a class="play-btn" href="download/{{ fname }}" title="Play" target="_blank">▶️</a>
+                    <form class="rename-form" action="rename" method="post"
+                        style="display:inline; margin:0; padding:0;">
+                        <input type="hidden" name="old_filename" value="{{ fname }}">
+                        <input class="rename-input" type="text" name="new_filename" value="{{ fname }}" maxlength="64"
+                            required>
+                        <button class="rename-btn" type="submit" title="Rename">✏️</button>
+                    </form>
+                    <form class="delete-form" action="delete" method="post">
+                        <input type="hidden" name="filename" value="{{ fname }}">
+                        <button class="delete-btn" type="submit" title="Delete">🗑️</button>
+                    </form>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <script>
+        function activateRename(btn) {
+            const form = btn.closest('.rename-form');
+            form.classList.add('active');
+            form.querySelector('.rename-input').style.display = 'inline-block';
+            form.querySelector('.confirm-rename-btn').style.display = 'inline-block';
+            form.querySelector('.cancel-rename-btn').style.display = 'inline-block';
+            form.querySelector('.rename-hint').style.display = 'inline-block';
+            btn.style.display = 'none';
+            form.querySelector('.rename-input').focus();
+            form.onsubmit = function (e) {
+                e.preventDefault();
+                submitRename(form.querySelector('.confirm-rename-btn'));
+            };
+        }
+        function cancelRename(btn) {
+            const form = btn.closest('.rename-form');
+            form.classList.remove('active');
+            form.querySelector('.rename-input').style.display = 'none';
+            form.querySelector('.confirm-rename-btn').style.display = 'none';
+            form.querySelector('.cancel-rename-btn').style.display = 'none';
+            form.querySelector('.rename-hint').style.display = 'none';
+            form.querySelector('.rename-btn').style.display = 'inline-block';
+        }
+        function submitRename(btn) {
+            const form = btn.closest('.rename-form');
+            form.classList.remove('active');
+            form.querySelector('.rename-btn').style.display = 'inline-block';
+            form.querySelector('.rename-input').style.display = 'none';
+            form.querySelector('.confirm-rename-btn').style.display = 'none';
+            form.querySelector('.cancel-rename-btn').style.display = 'none';
+            form.querySelector('.rename-hint').style.display = 'none';
+            form.submit();
+        }
+    </script>
+</body>
+
+</html>

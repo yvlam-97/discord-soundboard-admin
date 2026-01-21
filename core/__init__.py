@@ -1,5 +1,5 @@
 """
-Core module containing base classes and infrastructure for the SjefBot application.
+Core module containing base classes and infrastructure for the Audio Ambush application.
 """
 
 from .events import EventBus, Event, EventType, SoundEvent, ConfigEvent, SystemEvent

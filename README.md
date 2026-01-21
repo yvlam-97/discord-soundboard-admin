@@ -1,4 +1,4 @@
-# SjefBot - Discord Soundboard Bot
+# Audio Ambush - Discord Soundboard Bot
 
 A Discord bot that periodically joins voice channels and plays random sounds from a web-managed library. Built with a clean, event-driven architecture using Python, discord.py, and FastAPI.
 
@@ -24,7 +24,7 @@ A Discord bot that periodically joins voice channels and plays random sounds fro
          ┌─────────────────────┼─────────────────────┐
          ▼                     ▼                     ▼
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│    SjefBot      │  │    EventBus     │  │  Repositories   │
+│  AudioAmbush  │  │    EventBus     │  │  Repositories   │
 │   (Discord)     │  │   (Pub/Sub)     │  │   (Data Layer)  │
 └─────────────────┘  └─────────────────┘  └─────────────────┘
          │                     │                     │
@@ -41,13 +41,13 @@ A Discord bot that periodically joins voice channels and plays random sounds fro
 ### Project Structure
 
 ```
-sjefbot/
+audio-ambush/
 ├── main.py                 # Entry point, wires dependencies
 ├── core/
 │   ├── config.py           # Configuration from environment
 │   └── events.py           # EventBus and event types
 ├── bot/
-│   └── client.py           # SjefBot Discord client
+│   └── client.py           # AudioAmbush Discord client
 ├── repositories/
 │   ├── base.py             # DatabaseManager
 │   ├── sound_repository.py # Sound CRUD operations
@@ -105,8 +105,8 @@ Events include a `source` field to indicate where the action originated (e.g., "
 
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/sjefbot.git
-   cd sjefbot
+   git clone https://github.com/yourusername/audio-ambush.git
+   cd audio-ambush
    ```
 
 2. **Create and activate a virtual environment:**
@@ -283,14 +283,14 @@ event_bus.subscribe(EventType.MY_CUSTOM_EVENT, my_handler)
 ### Reverse Proxy (nginx)
 
 ```nginx
-location /sjefbot/ {
+location /audio-ambush/ {
     proxy_pass http://127.0.0.1:8000/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
 }
 ```
 
-Set `SOUNDBOARD_WEB_ROOT_PATH=/sjefbot` in `.env`.
+Set `SOUNDBOARD_WEB_ROOT_PATH=/audio-ambush` in `.env`.
 
 ### Docker
 

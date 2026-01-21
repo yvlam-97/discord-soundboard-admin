@@ -1,13 +1,9 @@
-import os
+
 import asyncio
-import random
 import discord
 import sqlite3
 import tempfile
-from dotenv import load_dotenv
 from db_util import ensure_tables_exist
-
-load_dotenv()
 
 async def play_random_sound(vc, db_path):
     # Fetch a random sound from the SQLite database
@@ -92,21 +88,3 @@ async def periodic_voice_task(client, interval=None, db_path=None):
                 print(f"Interval changed to {new_interval}, restarting wait.")
                 current_interval = new_interval
                 slept = 0
-
-
-# Utility function to get the time left until the next sound
-def get_time_until_next_sound(db_path):
-    import time
-    with sqlite3.connect(db_path) as conn:
-        # Get interval and last played timestamp
-        row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
-        interval = row[0] if row else 30
-        row = conn.execute("SELECT last_played FROM soundboard_state WHERE id = 1").fetchone()
-        last_played = row[0] if row and row[0] is not None else None
-    now = int(time.time())
-    if last_played is None:
-        # If never played, return 0 (ready to play)
-        return 0
-    time_left = (last_played + interval) - now
-    return max(time_left, 0)
-

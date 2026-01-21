@@ -54,17 +54,35 @@ class SoundboardService:
 
         self._task: asyncio.Task | None = None
         self._interval: int = 30  # Will be loaded from DB on start
+        self._volume: float = 1.0  # Volume as 0.0-1.0, loaded from DB
         self._interval_changed = asyncio.Event()
         self._running = False
 
+    @property
+    def interval(self) -> int:
+        """Get current playback interval in seconds."""
+        return self._interval
+
+    @property
+    def volume(self) -> int:
+        """Get current volume as percentage (0-100)."""
+        return int(self._volume * 100)
+
+    @property
+    def is_running(self) -> bool:
+        """Check if the service is running."""
+        return self._running
+
     async def start(self) -> None:
         """Start the soundboard service."""
-        # Load initial interval from database
+        # Load initial config from database
         self._interval = self._config_repo.get_interval()
-        print(f"[SoundboardService] Initial interval: {self._interval}s")
+        self._volume = self._config_repo.get_volume() / 100.0  # Convert to 0.0-1.0
+        print(f"[SoundboardService] Initial interval: {self._interval}s, volume: {int(self._volume * 100)}%")
 
-        # Subscribe to interval change events
+        # Subscribe to config change events
         self._event_bus.subscribe(EventType.INTERVAL_CHANGED, self._on_interval_changed)
+        self._event_bus.subscribe(EventType.VOLUME_CHANGED, self._on_volume_changed)
 
         # Start the background task
         self._running = True
@@ -83,6 +101,7 @@ class SoundboardService:
                 pass
 
         self._event_bus.unsubscribe(EventType.INTERVAL_CHANGED, self._on_interval_changed)
+        self._event_bus.unsubscribe(EventType.VOLUME_CHANGED, self._on_volume_changed)
 
     async def _on_interval_changed(self, event: ConfigEvent) -> None:
         """Handle interval change events."""
@@ -90,6 +109,12 @@ class SoundboardService:
         print(f"[SoundboardService] Interval changed: {self._interval}s -> {new_interval}s")
         self._interval = new_interval
         self._interval_changed.set()  # Wake up the sleep to use new interval
+
+    async def _on_volume_changed(self, event: ConfigEvent) -> None:
+        """Handle volume change events."""
+        new_volume = int(event.value) / 100.0
+        print(f"[SoundboardService] Volume changed: {int(self._volume * 100)}% -> {int(new_volume * 100)}%")
+        self._volume = new_volume
 
     async def _run_loop(self) -> None:
         """Main service loop."""
@@ -174,6 +199,8 @@ class SoundboardService:
                 tmp_path = tmp.name
 
             source = discord.FFmpegPCMAudio(tmp_path)
+            # Apply volume transformation
+            source = discord.PCMVolumeTransformer(source, volume=self._volume)
             vc.play(source)
 
             # Wait for playback to finish

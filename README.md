@@ -5,11 +5,13 @@ A Discord bot that periodically joins voice channels and plays random sounds fro
 ## Features
 
 - 🔊 **Automatic Soundboard** - Bot joins the most populated voice channel and plays random sounds at configurable intervals
+- �️ **Volume Control** - Adjust playback volume via web interface or Discord commands
 - 🌐 **Web Admin Interface** - Upload, rename, and delete sounds through a modern web UI
 - 🔐 **Discord OAuth2** - Secure authentication using your Discord account
-- 📢 **Real-time Notifications** - Get Discord messages when sounds are added, renamed, or deleted
+- 📢 **Real-time Notifications** - Get Discord messages when sounds are added, renamed, deleted, or settings changed
 - ⚡ **Event-Driven Architecture** - No database polling; instant updates via pub/sub pattern
 - 💾 **SQLite Storage** - Sounds stored as BLOBs for easy backup and portability
+- 🤖 **Slash Commands** - `/list`, `/status`, `/volume`, and `/ping` commands
 
 ## Architecture
 
@@ -57,7 +59,10 @@ sjefbot/
 ├── web/
 │   └── __init__.py         # Web routes and handlers
 ├── commands/
-│   └── ping.py             # Slash commands
+│   ├── ping.py             # Ping command
+│   ├── list.py             # List all sounds
+│   ├── status.py           # Show bot status
+│   └── volume.py           # Set playback volume
 └── templates/
     └── soundboard_admin.html
 ```
@@ -76,15 +81,17 @@ sjefbot/
 When a user uploads a sound via the web interface:
 
 ```
-Web Upload → SoundRepository.create() → EventBus.publish(SOUND_UPLOADED)
+Web Upload → SoundRepository.create() → EventBus.publish(SOUND_UPLOADED, source="web")
                                                     │
                     ┌───────────────────────────────┘
                     ▼
         NotificationService._on_sound_uploaded()
                     │
                     ▼
-        Discord Channel: "📥 Sound uploaded: **mysound.mp3**"
+        Discord Channel: "📥 Sound uploaded: **mysound.mp3** (web)"
 ```
+
+Events include a `source` field to indicate where the action originated (e.g., "web" for web interface actions).
 
 ## Quick Start
 
@@ -168,7 +175,8 @@ Web Upload → SoundRepository.create() → EventBus.publish(SOUND_UPLOADED)
 | `DISCORD_CLIENT_SECRET` | ✅ | - | OAuth2 client secret |
 | `DISCORD_REDIRECT_URI` | ✅ | - | OAuth2 callback URL (must match portal) |
 | `SOUNDBOARD_DB_PATH` | ❌ | `./soundboard.db` | SQLite database path |
-| `SOUNDBOARD_INTERVAL` | ❌ | `30` | Seconds between sound plays (min: 30) |
+| `SOUNDBOARD_INTERVAL` | ❌ | `30` | Seconds between sound plays (30-3600) |
+| `SOUNDBOARD_VOLUME` | ❌ | `100` | Playback volume percentage (0-100) |
 | `SOUNDBOARD_NOTIFY_CHANNEL_ID` | ❌ | - | Channel for upload/delete notifications |
 | `SOUNDBOARD_WEB_HOST` | ❌ | `0.0.0.0` | Web server bind address |
 | `SOUNDBOARD_WEB_PORT` | ❌ | `8000` | Web server port |
@@ -202,6 +210,15 @@ async def hello_command(interaction: Interaction):
 
 Commands are automatically loaded on startup.
 
+### Built-in Commands
+
+| Command | Description |
+|---------|-------------|
+| `/ping` | Check if the bot is responding |
+| `/list` | Show all available sounds in the library |
+| `/status` | Display bot status, voice connection, interval, volume, and sound count |
+| `/volume <level>` | Set playback volume (0-100) |
+
 ## Extending the Bot
 
 ### Adding a New Service
@@ -231,18 +248,35 @@ bot.register_service(my_service)
 ### Custom Events
 
 ```python
-from core.events import Event, EventType, get_event_bus
+from core.events import Event, EventType, ConfigEvent, get_event_bus
 
 # Define new event type in core/events.py
 class EventType(Enum):
     MY_CUSTOM_EVENT = auto()
 
-# Publish
-await event_bus.publish(Event(event_type=EventType.MY_CUSTOM_EVENT))
+# Publish (use source to track origin)
+await event_bus.publish(ConfigEvent(
+    event_type=EventType.MY_CUSTOM_EVENT,
+    key="my_key",
+    value="new_value",
+    source="web"  # Optional: track where event originated
+))
 
 # Subscribe
 event_bus.subscribe(EventType.MY_CUSTOM_EVENT, my_handler)
 ```
+
+### Available Event Types
+
+| Event Type | Event Class | Description |
+|------------|-------------|-------------|
+| `SOUND_UPLOADED` | `SoundEvent` | A new sound was added |
+| `SOUND_DELETED` | `SoundEvent` | A sound was removed |
+| `SOUND_RENAMED` | `SoundEvent` | A sound was renamed |
+| `INTERVAL_CHANGED` | `ConfigEvent` | Playback interval was changed |
+| `VOLUME_CHANGED` | `ConfigEvent` | Playback volume was changed |
+| `BOT_READY` | `SystemEvent` | Bot has connected to Discord |
+| `SHUTDOWN` | `SystemEvent` | Bot is shutting down |
 
 ## Deployment
 

@@ -90,6 +90,7 @@ class SoundboardWebApp:
 
         # Config
         router.post("/set-interval")(self.set_interval)
+        router.post("/set-volume")(self.set_volume)
 
         self.app.include_router(router)
 
@@ -202,6 +203,7 @@ class SoundboardWebApp:
         # Get data from repositories
         files = self._sound_repo.get_all_filenames()
         interval_value = self._config_repo.get_interval()
+        volume_value = self._config_repo.get_volume()
 
         # User info
         username = user.get("username", "Unknown")
@@ -214,6 +216,7 @@ class SoundboardWebApp:
                 "request": request,
                 "files": files,
                 "interval_value": interval_value,
+                "volume_value": volume_value,
                 "username": username,
                 "avatar_url": avatar_url
             }
@@ -240,6 +243,7 @@ class SoundboardWebApp:
             # Publish event
             await self._event_bus.publish(SoundEvent(
                 event_type=EventType.SOUND_UPLOADED,
+                source="web",
                 filename=file.filename
             ))
 
@@ -277,6 +281,7 @@ class SoundboardWebApp:
         # Publish event
         await self._event_bus.publish(SoundEvent(
             event_type=EventType.SOUND_RENAMED,
+            source="web",
             filename=old_filename,
             new_filename=new_filename
         ))
@@ -295,6 +300,7 @@ class SoundboardWebApp:
         # Publish event
         await self._event_bus.publish(SoundEvent(
             event_type=EventType.SOUND_DELETED,
+            source="web",
             filename=filename
         ))
 
@@ -327,9 +333,36 @@ class SoundboardWebApp:
         # Publish event
         await self._event_bus.publish(ConfigEvent(
             event_type=EventType.INTERVAL_CHANGED,
+            source="web",
             key="interval",
             value=interval,
             old_value=old_interval
+        ))
+
+        return RedirectResponse(url=f"{self._get_root_path(request)}/", status_code=303)
+
+    async def set_volume(self, request: Request, volume: int = Form(...)):
+        """Set the playback volume."""
+        user = self._ensure_logged_in(request)
+        if not user:
+            return RedirectResponse(url=f"{self._get_root_path(request)}/login")
+
+        if volume < 0 or volume > 100:
+            raise HTTPException(
+                status_code=400,
+                detail="Volume must be between 0 and 100."
+            )
+
+        old_volume = self._config_repo.get_volume()
+        self._config_repo.set_volume(volume)
+
+        # Publish event
+        await self._event_bus.publish(ConfigEvent(
+            event_type=EventType.VOLUME_CHANGED,
+            source="web",
+            key="volume",
+            value=volume,
+            old_value=old_volume
         ))
 
         return RedirectResponse(url=f"{self._get_root_path(request)}/", status_code=303)

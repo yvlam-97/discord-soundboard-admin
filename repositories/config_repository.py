@@ -66,3 +66,47 @@ class ConfigRepository:
             )
 
             return old_value
+
+    def get_volume(self) -> int:
+        """
+        Get the current playback volume.
+
+        Returns:
+            Volume as percentage (0-100, default: 100)
+        """
+        with self._db.connection() as conn:
+            row = conn.execute(
+                "SELECT volume FROM interval_config WHERE id = 1"
+            ).fetchone()
+            return row["volume"] if row else 100
+
+    def set_volume(self, volume: int) -> int:
+        """
+        Set the playback volume.
+
+        Args:
+            volume: New volume as percentage (0-100)
+
+        Returns:
+            The old volume value
+        """
+        with self._db.connection() as conn:
+            # Get old value
+            old_row = conn.execute(
+                "SELECT volume FROM interval_config WHERE id = 1"
+            ).fetchone()
+            old_value = old_row["volume"] if old_row else 100
+
+            # Update
+            conn.execute(
+                "UPDATE interval_config SET volume = ? WHERE id = 1",
+                (volume,)
+            )
+
+            # Log event
+            conn.execute(
+                "INSERT INTO soundboard_events (timestamp, event_type, filename, extra) VALUES (?, ?, ?, ?)",
+                (int(time.time()), "volume_change", str(volume), str(old_value))
+            )
+
+            return old_value

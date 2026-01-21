@@ -87,14 +87,21 @@ class DatabaseManager:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS interval_config (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
-                    interval INTEGER NOT NULL
+                    interval INTEGER NOT NULL,
+                    volume INTEGER NOT NULL DEFAULT 100
                 )
             """)
 
             # Insert default interval if not present
             cur = conn.execute("SELECT interval FROM interval_config WHERE id = 1")
             if cur.fetchone() is None:
-                conn.execute("INSERT INTO interval_config (id, interval) VALUES (1, 30)")
+                conn.execute("INSERT INTO interval_config (id, interval, volume) VALUES (1, 30, 100)")
+            else:
+                # Ensure volume column exists (migration for existing DBs)
+                try:
+                    conn.execute("SELECT volume FROM interval_config WHERE id = 1")
+                except sqlite3.OperationalError:
+                    conn.execute("ALTER TABLE interval_config ADD COLUMN volume INTEGER NOT NULL DEFAULT 100")
 
             # Soundboard events table (for audit log)
             conn.execute("""

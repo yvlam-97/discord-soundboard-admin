@@ -580,6 +580,10 @@
                 <div class="stat-value">{{ interval_value }}s</div>
                 <div class="stat-label">Play Interval</div>
             </div>
+            <div class="stat">
+                <div class="stat-value">{{ volume_value }}%</div>
+                <div class="stat-label">Volume</div>
+            </div>
         </div>
 
         <!-- Settings Card -->
@@ -591,7 +595,7 @@
                     <p class="card-subtitle">Configure bot behavior</p>
                 </div>
             </div>
-            <form action="set-interval" method="post">
+            <form action="set-interval" method="post" style="margin-bottom: 20px;">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="interval">Sound Play Interval (seconds)</label>
@@ -600,7 +604,26 @@
                         <p class="form-hint warning">⚠️ Minimum: 30 seconds, Maximum: 3600 seconds</p>
                     </div>
                     <button type="submit" class="btn btn-primary">
-                        💾 Save Settings
+                        💾 Save
+                    </button>
+                </div>
+            </form>
+            <form action="set-volume" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="volume">Playback Volume (%)</label>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <input class="form-input" id="volume" name="volume" type="range" min="0" max="100"
+                                value="{{ volume_value }}" style="flex: 1; height: 8px; cursor: pointer;"
+                                oninput="document.getElementById('volume-display').textContent = this.value + '%'">
+                            <span id="volume-display"
+                                style="min-width: 50px; font-weight: 600; color: var(--text-primary);">{{ volume_value
+                                }}%</span>
+                        </div>
+                        <p class="form-hint">🔊 Adjust the bot's playback volume (0-100%)</p>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Save
                     </button>
                 </div>
             </form>

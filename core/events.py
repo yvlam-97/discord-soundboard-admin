@@ -22,6 +22,7 @@ class EventType(Enum):
 
     # Config events
     INTERVAL_CHANGED = auto()
+    VOLUME_CHANGED = auto()
 
     # System events
     BOT_READY = auto()
@@ -32,6 +33,7 @@ class EventType(Enum):
 class Event(ABC):
     """Base class for all events."""
     event_type: EventType
+    source: str | None = field(default=None, kw_only=True)  # e.g., "web", "command", None for system
 
 
 @dataclass

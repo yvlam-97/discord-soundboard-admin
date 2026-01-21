@@ -54,6 +54,7 @@ class SjefBot(discord.Client):
 
         self.tree = app_commands.CommandTree(self)
         self._services: list = []
+        self.soundboard_service = None  # Set when service is registered
 
     def register_service(self, service) -> None:
         """
@@ -65,6 +66,10 @@ class SjefBot(discord.Client):
             service: Service instance with start() method
         """
         self._services.append(service)
+        
+        # Store reference to soundboard service for command access
+        if service.__class__.__name__ == "SoundboardService":
+            self.soundboard_service = service
 
     async def setup_hook(self) -> None:
         """

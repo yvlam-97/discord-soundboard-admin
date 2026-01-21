@@ -53,6 +53,7 @@ class NotificationService:
         self._event_bus.subscribe(EventType.SOUND_DELETED, self._on_sound_deleted)
         self._event_bus.subscribe(EventType.SOUND_RENAMED, self._on_sound_renamed)
         self._event_bus.subscribe(EventType.INTERVAL_CHANGED, self._on_interval_changed)
+        self._event_bus.subscribe(EventType.VOLUME_CHANGED, self._on_volume_changed)
 
         print(f"[NotificationService] Listening for events, will notify channel {self._channel_id}")
 
@@ -62,6 +63,7 @@ class NotificationService:
         self._event_bus.unsubscribe(EventType.SOUND_DELETED, self._on_sound_deleted)
         self._event_bus.unsubscribe(EventType.SOUND_RENAMED, self._on_sound_renamed)
         self._event_bus.unsubscribe(EventType.INTERVAL_CHANGED, self._on_interval_changed)
+        self._event_bus.unsubscribe(EventType.VOLUME_CHANGED, self._on_volume_changed)
 
     async def _get_channel(self):
         """Get or fetch the notification channel."""
@@ -87,22 +89,37 @@ class NotificationService:
             except Exception as e:
                 print(f"[NotificationService] Failed to send message: {e}")
 
+    def _format_source(self, event) -> str:
+        """Format the source suffix for notifications."""
+        return f" ({event.source})" if event.source else ""
+
     async def _on_sound_uploaded(self, event: SoundEvent) -> None:
         """Handle sound upload events."""
-        await self._send_notification(f"📥 Sound uploaded: **{event.filename}**")
+        suffix = self._format_source(event)
+        await self._send_notification(f"📥 Sound uploaded: **{event.filename}**{suffix}")
 
     async def _on_sound_deleted(self, event: SoundEvent) -> None:
         """Handle sound deletion events."""
-        await self._send_notification(f"🗑️ Sound deleted: **{event.filename}**")
+        suffix = self._format_source(event)
+        await self._send_notification(f"🗑️ Sound deleted: **{event.filename}**{suffix}")
 
     async def _on_sound_renamed(self, event: SoundEvent) -> None:
         """Handle sound rename events."""
+        suffix = self._format_source(event)
         await self._send_notification(
-            f"✏️ Sound renamed: **{event.filename}** → **{event.new_filename}**"
+            f"✏️ Sound renamed: **{event.filename}** → **{event.new_filename}**{suffix}"
         )
 
     async def _on_interval_changed(self, event: ConfigEvent) -> None:
         """Handle interval change events."""
+        suffix = self._format_source(event)
         await self._send_notification(
-            f"⏱️ Playback interval changed to **{event.value}** seconds"
+            f"⏱️ Playback interval changed to **{event.value}** seconds{suffix}"
+        )
+
+    async def _on_volume_changed(self, event: ConfigEvent) -> None:
+        """Handle volume change events."""
+        suffix = self._format_source(event)
+        await self._send_notification(
+            f"🔊 Playback volume changed to **{event.value}%**{suffix}"
         )

@@ -1,4 +1,5 @@
 
+
 import os
 import sqlite3
 import secrets
@@ -10,21 +11,26 @@ from fastapi.security import OAuth2AuthorizationCodeBearer
 from starlette.middleware.sessions import SessionMiddleware
 import httpx
 from dotenv import load_dotenv
+from db_util import ensure_valid_sqlite_db, ensure_tables_exist
+import time
 
 load_dotenv()
 ROOT_PATH = os.getenv("SOUNDBOARD_WEB_ROOT_PATH", "")
-app = FastAPI(root_path=ROOT_PATH)
-router = APIRouter()
-templates = Jinja2Templates(directory="templates")
-app.add_middleware(SessionMiddleware, secret_key=secrets.token_urlsafe(32))
-
-# Discord OAuth2 config
 DISCORD_CLIENT_ID = os.getenv("DISCORD_CLIENT_ID")
 DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 DISCORD_REDIRECT_URI = os.getenv("DISCORD_REDIRECT_URI")
 DISCORD_OAUTH_AUTHORIZE_URL = "https://discord.com/api/oauth2/authorize"
 DISCORD_OAUTH_TOKEN_URL = "https://discord.com/api/oauth2/token"
 DISCORD_API_USER_URL = "https://discord.com/api/users/@me"
+DB_PATH = os.getenv("SOUNDBOARD_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "soundboard.db")))
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
+ensure_valid_sqlite_db(DB_PATH)
+ensure_tables_exist(DB_PATH)
+app = FastAPI(root_path=ROOT_PATH)
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
+app.add_middleware(SessionMiddleware, secret_key=secrets.token_urlsafe(32))
+
 
 def get_current_user(request: Request):
     user = request.session.get("user")
@@ -43,31 +49,6 @@ def ensure_logged_in(request: Request):
     if not user:
         return RedirectResponse(url=f"{get_root_path(request)}/login")
     return user
-DB_PATH = os.getenv("SOUNDBOARD_DB_PATH", os.path.abspath("soundboard.db"))  # Configurable via .env (SOUNDBOARD_DB_PATH)
-MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
-
-# Ensure table exists
-def init_db():
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS sounds (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT UNIQUE,
-            data BLOB
-        )
-        """)
-        # Ensure interval_config table exists
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS interval_config (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            interval INTEGER NOT NULL
-        )
-        """)
-        # Insert default interval if not present
-        cur = conn.execute("SELECT interval FROM interval_config WHERE id = 1")
-        if cur.fetchone() is None:
-            conn.execute("INSERT INTO interval_config (id, interval) VALUES (1, 30)")
-init_db()
 
 @router.get("/login")
 def login(request: Request):
@@ -154,6 +135,9 @@ async def rename_file(request: Request, old_filename: str = Form(...), new_filen
         if exists:
             raise HTTPException(status_code=400, detail="A sound with that name already exists.")
         conn.execute("UPDATE sounds SET filename = ? WHERE filename = ?", (new_filename, old_filename))
+        # Insert event into events table
+        conn.execute("INSERT INTO soundboard_events (timestamp, event_type, filename, extra) VALUES (?, ?, ?, ?)", (int(time.time()), 'rename', old_filename, new_filename))
+
     return RedirectResponse(url=f"{get_root_path(request)}/", status_code=303)
 
 @router.post("/delete")
@@ -163,6 +147,8 @@ async def delete_file(request: Request, filename: str = Form(...)):
         return user
     with get_db_conn() as conn:
         conn.execute("DELETE FROM sounds WHERE filename = ?", (filename,))
+        # Insert event into events table
+        conn.execute("INSERT INTO soundboard_events (timestamp, event_type, filename) VALUES (?, ?, ?)", (int(time.time()), 'delete', filename))
     return RedirectResponse(url=f"{get_root_path(request)}/", status_code=303)
 
 
@@ -179,6 +165,8 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     with get_db_conn() as conn:
         try:
             conn.execute("INSERT OR REPLACE INTO sounds (filename, data) VALUES (?, ?)", (file.filename, contents))
+            # Insert event into events table
+            conn.execute("INSERT INTO soundboard_events (timestamp, event_type, filename) VALUES (?, ?, ?)", (int(time.time()), 'upload', file.filename))
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
     return RedirectResponse(url=f"{get_root_path(request)}/", status_code=303)
@@ -200,6 +188,7 @@ async def set_interval(request: Request, interval: int = Form(...)):
         raise HTTPException(status_code=400, detail="Interval must be between 30 and 3600 seconds.")
     with get_db_conn() as conn:
         conn.execute("UPDATE interval_config SET interval = ? WHERE id = 1", (interval,))
+        conn.execute("INSERT INTO soundboard_events (timestamp, event_type, filename) VALUES (?, ?, ?)", (int(time.time()), 'interval_change', str(interval)))
     return RedirectResponse(url=f"{get_root_path(request)}/", status_code=303)
 
 

@@ -1,35 +1,18 @@
-
 import os
 import asyncio
 import random
 import discord
 import sqlite3
 import tempfile
+from dotenv import load_dotenv
+from db_util import ensure_tables_exist
 
+load_dotenv()
 
-# Use SOUNDBOARD_DB_PATH from environment or default to soundboard.db in the root
-DB_PATH = os.getenv("SOUNDBOARD_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "soundboard.db")))
-
-# Ensure the interval table exists
-def init_interval_table():
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("""
-        CREATE TABLE IF NOT EXISTS interval_config (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            interval INTEGER NOT NULL
-        )
-        """)
-        # Insert default interval if not present
-        cur = conn.execute("SELECT interval FROM interval_config WHERE id = 1")
-        if cur.fetchone() is None:
-            conn.execute("INSERT INTO interval_config (id, interval) VALUES (1, 30)")
-
-init_interval_table()
-
-async def play_random_sound(vc):
+async def play_random_sound(vc, db_path):
     # Fetch a random sound from the SQLite database
     try:
-        with sqlite3.connect(DB_PATH) as conn:
+        with sqlite3.connect(db_path) as conn:
             row = conn.execute("SELECT filename, data FROM sounds ORDER BY RANDOM() LIMIT 1").fetchone()
         if not row:
             print("No sound files found in database.")
@@ -45,22 +28,42 @@ async def play_random_sound(vc):
             await asyncio.sleep(1)
         await vc.disconnect()
         os.remove(tmp_path)
+        # Update last played timestamp in the database
+        import time
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("UPDATE soundboard_state SET last_played = ? WHERE id = 1", (int(time.time()),))
     except Exception as e:
         print(f"Error playing sound: {e}")
 
-async def periodic_voice_task(client, interval=None):
+
+async def periodic_voice_task(client, interval=None, db_path=None):
+    if db_path is None:
+        raise RuntimeError("No database path provided to soundboard_event_watcher")
+    ensure_tables_exist(db_path)
     await client.wait_until_ready()
+    sleep_step = 1  # seconds
     while not client.is_closed():
         try:
-            # Get the current interval from the database
-            with sqlite3.connect(DB_PATH) as conn:
+            # Get the current interval and sound count from the database
+            with sqlite3.connect(db_path) as conn:
                 row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
                 current_interval = row[0] if row else 30
                 sound_count = conn.execute("SELECT COUNT(*) FROM sounds").fetchone()[0]
                 print(f"[Voice Task] Current interval: {current_interval} seconds")
             if sound_count == 0:
                 print("No sound files found in database. Bot will not connect to voice channels.")
-                await asyncio.sleep(current_interval)
+                # Sleep in small steps, re-check interval each second
+                slept = 0
+                while slept < current_interval:
+                    await asyncio.sleep(sleep_step)
+                    slept += sleep_step
+                    with sqlite3.connect(db_path) as conn:
+                        row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
+                        new_interval = row[0] if row else 30
+                    if new_interval != current_interval:
+                        print(f"Interval changed to {new_interval}, restarting wait.")
+                        current_interval = new_interval
+                        slept = 0
                 continue
             for guild in client.guilds:
                 # Find the voice channel with the most members
@@ -71,7 +74,39 @@ async def periodic_voice_task(client, interval=None):
                 # Only join if not already connected
                 if guild.voice_client is None or not guild.voice_client.is_connected():
                     vc = await target_channel.connect()
-                    await play_random_sound(vc)
+                    await play_random_sound(vc, db_path)
         except Exception as e:
             print(f"Error in periodic voice task: {e}")
-        await asyncio.sleep(current_interval)
+        # Sleep in small steps, re-check interval each second
+        slept = 0
+        with sqlite3.connect(db_path) as conn:
+            row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
+            current_interval = row[0] if row else 30
+        while slept < current_interval:
+            await asyncio.sleep(sleep_step)
+            slept += sleep_step
+            with sqlite3.connect(db_path) as conn:
+                row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
+                new_interval = row[0] if row else 30
+            if new_interval != current_interval:
+                print(f"Interval changed to {new_interval}, restarting wait.")
+                current_interval = new_interval
+                slept = 0
+
+
+# Utility function to get the time left until the next sound
+def get_time_until_next_sound(db_path):
+    import time
+    with sqlite3.connect(db_path) as conn:
+        # Get interval and last played timestamp
+        row = conn.execute("SELECT interval FROM interval_config WHERE id = 1").fetchone()
+        interval = row[0] if row else 30
+        row = conn.execute("SELECT last_played FROM soundboard_state WHERE id = 1").fetchone()
+        last_played = row[0] if row and row[0] is not None else None
+    now = int(time.time())
+    if last_played is None:
+        # If never played, return 0 (ready to play)
+        return 0
+    time_left = (last_played + interval) - now
+    return max(time_left, 0)
+

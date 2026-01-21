@@ -1,120 +1,294 @@
-# Discord Soundboard Admin
+# SjefBot - Discord Soundboard Bot
 
-This project provides a Discord bot with a web-based soundboard admin interface. It allows you to upload, delete, rename, and play sound effects (mp3 files) stored in a SQLite database, with Discord OAuth2 authentication for secure access.
+A Discord bot that periodically joins voice channels and plays random sounds from a web-managed library. Built with a clean, event-driven architecture using Python, discord.py, and FastAPI.
 
 ## Features
-- Discord bot with slash command support (discord.py 2.x)
-- Periodic voice join and soundboard playback (interval configurable, minimum 30s)
-- FastAPI web interface for soundboard management
-- Upload, delete, and rename mp3 sound effects
-- Sound files stored as BLOBs in SQLite (configurable path)
-- Modern, responsive web UI
-- Discord OAuth2 authentication (identify scope)
-- Session management with configurable secret
+
+- 🔊 **Automatic Soundboard** - Bot joins the most populated voice channel and plays random sounds at configurable intervals
+- 🌐 **Web Admin Interface** - Upload, rename, and delete sounds through a modern web UI
+- 🔐 **Discord OAuth2** - Secure authentication using your Discord account
+- 📢 **Real-time Notifications** - Get Discord messages when sounds are added, renamed, or deleted
+- ⚡ **Event-Driven Architecture** - No database polling; instant updates via pub/sub pattern
+- 💾 **SQLite Storage** - Sounds stored as BLOBs for easy backup and portability
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          main.py                                │
+│                    (Dependency Injection)                       │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         ▼                     ▼                     ▼
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│    SjefBot      │  │    EventBus     │  │  Repositories   │
+│   (Discord)     │  │   (Pub/Sub)     │  │   (Data Layer)  │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+         │                     │                     │
+         │           ┌─────────┴─────────┐           │
+         ▼           ▼                   ▼           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         Services                                │
+├─────────────────┬─────────────────────┬─────────────────────────┤
+│ SoundboardSvc   │ NotificationSvc     │ WebServerSvc            │
+│ (Voice playback)│ (Discord messages)  │ (FastAPI + Uvicorn)     │
+└─────────────────┴─────────────────────┴─────────────────────────┘
+```
+
+### Project Structure
+
+```
+sjefbot/
+├── main.py                 # Entry point, wires dependencies
+├── core/
+│   ├── config.py           # Configuration from environment
+│   └── events.py           # EventBus and event types
+├── bot/
+│   └── client.py           # SjefBot Discord client
+├── repositories/
+│   ├── base.py             # DatabaseManager
+│   ├── sound_repository.py # Sound CRUD operations
+│   └── config_repository.py# Config persistence
+├── services/
+│   ├── soundboard_service.py    # Voice channel playback
+│   ├── notification_service.py  # Discord notifications
+│   └── web_server_service.py    # FastAPI server
+├── web/
+│   └── __init__.py         # Web routes and handlers
+├── commands/
+│   └── ping.py             # Slash commands
+└── templates/
+    └── soundboard_admin.html
+```
+
+### Key Design Patterns
+
+| Pattern | Implementation | Purpose |
+|---------|---------------|---------|
+| **Repository** | `SoundRepository`, `ConfigRepository` | Abstracts database operations |
+| **Pub/Sub** | `EventBus` | Decouples components, enables real-time updates |
+| **Dependency Injection** | `main.py` | Testable, loosely coupled components |
+| **Service Layer** | `*Service` classes | Encapsulates business logic |
+
+### Event Flow Example
+
+When a user uploads a sound via the web interface:
+
+```
+Web Upload → SoundRepository.create() → EventBus.publish(SOUND_UPLOADED)
+                                                    │
+                    ┌───────────────────────────────┘
+                    ▼
+        NotificationService._on_sound_uploaded()
+                    │
+                    ▼
+        Discord Channel: "📥 Sound uploaded: **mysound.mp3**"
+```
 
 ## Quick Start
 
+### Prerequisites
+
+- Python 3.11+
+- FFmpeg (for audio playback)
+- Discord Bot Token ([Discord Developer Portal](https://discord.com/developers/applications))
+
+### Installation
+
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/yourusername/discord-soundboard-admin.git
-   cd discord-soundboard-admin
+   git clone https://github.com/yourusername/sjefbot.git
+   cd sjefbot
    ```
 
-2. **Create and activate a Python virtual environment:**
+2. **Create and activate a virtual environment:**
    ```sh
    python -m venv bot-env
-   source bot-env/bin/activate  # On Windows: bot-env\Scripts\activate
+   
+   # Linux/macOS
+   source bot-env/bin/activate
+   
+   # Windows
+   bot-env\Scripts\activate
    ```
 
 3. **Install dependencies:**
    ```sh
    pip install -r requirements.txt
    ```
-   > **Note:** Both `run_windows.bat` and `run_linux.sh` will automatically update dependencies from `requirements.txt` every time you start the project.
 
 4. **Configure environment variables:**
-   Create a `.env` file in the project root with the following:
+   
+   Create a `.env` file in the project root:
    ```ini
-   DISCORD_BOT_TOKEN=your_discord_bot_token
-   DISCORD_CLIENT_ID=your_discord_client_id
-   DISCORD_CLIENT_SECRET=your_discord_client_secret
-   DISCORD_REDIRECT_URI=http://localhost:8080/callback
-   SESSION_SECRET=your_random_secret_key
-   SOUNDBOARD_DB_PATH=./soundboard.db  # Optional, defaults to ./soundboard.db
-   GUILD_ID=your_guild_id_here  # Optional
-   SOUNDBOARD_WEB_HOST=0.0.0.0         # Optional, defaults to 127.0.0.1
-   SOUNDBOARD_WEB_PORT=8080            # Optional, defaults to 8080
-   SOUNDBOARD_WEB_ROOT_PATH=/sjefbot    # Optional, for subpath mounting (see below)
+   # Required
+   DISCORD_BOT_TOKEN=your_bot_token
+   GUILD_ID=your_server_id
+   
+   # Required for web admin
+   DISCORD_CLIENT_ID=your_client_id
+   DISCORD_CLIENT_SECRET=your_client_secret
+   DISCORD_REDIRECT_URI=http://localhost:8000/callback
+   
+   # Optional
+   SOUNDBOARD_DB_PATH=./soundboard.db
+   SOUNDBOARD_INTERVAL=30
+   SOUNDBOARD_NOTIFY_CHANNEL_ID=your_channel_id
+   SOUNDBOARD_WEB_HOST=0.0.0.0
+   SOUNDBOARD_WEB_PORT=8000
+   SOUNDBOARD_WEB_ROOT_PATH=
    ```
 
-5. **Run the bot and web server:**
-   - On Linux:
-     ```sh
-     ./run_linux.sh
-     ```
-   - On Windows:
-     ```bat
-     .\run_windows.bat
-     ```
-   > Both scripts will activate the virtual environment and update dependencies before starting the bot and web server.
+5. **Run the bot:**
+   ```sh
+   python main.py
+   ```
+   
+   Or use the provided scripts:
+   ```sh
+   # Linux/macOS
+   ./run_linux.sh
+   
+   # Windows
+   .\run_windows.bat
+   ```
 
 6. **Access the web interface:**
-   Open [http://localhost:8080](http://localhost:8080) in your browser. Log in with your Discord account.
+   
+   Open [http://localhost:8000](http://localhost:8000) and log in with Discord.
 
-## Configuration
+## Configuration Reference
 
-All configuration is handled via environment variables in your `.env` file:
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DISCORD_BOT_TOKEN` | ✅ | - | Bot token from Discord Developer Portal |
+| `GUILD_ID` | ✅ | - | Your Discord server ID |
+| `DISCORD_CLIENT_ID` | ✅ | - | OAuth2 client ID for web login |
+| `DISCORD_CLIENT_SECRET` | ✅ | - | OAuth2 client secret |
+| `DISCORD_REDIRECT_URI` | ✅ | - | OAuth2 callback URL (must match portal) |
+| `SOUNDBOARD_DB_PATH` | ❌ | `./soundboard.db` | SQLite database path |
+| `SOUNDBOARD_INTERVAL` | ❌ | `30` | Seconds between sound plays (min: 30) |
+| `SOUNDBOARD_NOTIFY_CHANNEL_ID` | ❌ | - | Channel for upload/delete notifications |
+| `SOUNDBOARD_WEB_HOST` | ❌ | `0.0.0.0` | Web server bind address |
+| `SOUNDBOARD_WEB_PORT` | ❌ | `8000` | Web server port |
+| `SOUNDBOARD_WEB_ROOT_PATH` | ❌ | `` | URL prefix for reverse proxy setups |
 
+## Discord Bot Setup
 
-| Variable                | Description                                                      | Example/Default                  |
-|-------------------------|------------------------------------------------------------------|----------------------------------|
-| `DISCORD_BOT_TOKEN`     | Your Discord bot token                                           | (required)                       |
-| `DISCORD_CLIENT_ID`     | Discord OAuth2 client ID                                         | (required)                       |
-| `DISCORD_CLIENT_SECRET` | Discord OAuth2 client secret                                     | (required)                       |
-| `DISCORD_REDIRECT_URI`  | OAuth2 redirect URI (must match Discord app settings)            | http://localhost:8080/callback   |
-| `SESSION_SECRET`        | Secret key for session encryption (keep this safe!)              | (required, random string)        |
-| `SOUNDBOARD_DB_PATH`    | Path to the SQLite database file for soundboard storage          | ./soundboard.db                  |
-| `GUILD_ID`              | (Optional) Your Discord server's guild ID (for some features)    |                                  |
-| `SOUNDBOARD_WEB_HOST`   | Host for the web admin (FastAPI/uvicorn)                         | 127.0.0.1                        |
-| `SOUNDBOARD_WEB_PORT`   | Port for the web admin (FastAPI/uvicorn)                         | 8080                             |
-| `SOUNDBOARD_WEB_ROOT_PATH` | (Optional) Root path for FastAPI app (for subpath mounting, e.g. /sjefbot) | (empty string for root, or e.g. /sjefbot) |
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a new application
+3. Go to **Bot** → Create bot → Copy token → Set as `DISCORD_BOT_TOKEN`
+4. Enable **Message Content Intent** under Privileged Gateway Intents
+5. Go to **OAuth2** → Copy Client ID and Secret
+6. Add redirect URI: `http://localhost:8000/callback`
+7. Go to **OAuth2 → URL Generator**:
+   - Scopes: `bot`, `applications.commands`
+   - Bot Permissions: `Connect`, `Speak`, `Send Messages`
+8. Use generated URL to invite bot to your server
 
+## Adding Slash Commands
 
-### Sound Interval
+Create a new file in `commands/`:
 
-- The bot's sound playback interval is configurable from the web admin page.
-- **Minimum allowed interval is 30 seconds.**
+```python
+# commands/hello.py
+from discord import app_commands, Interaction
 
-### Running & Dependency Management
+@app_commands.command(name="hello", description="Say hello!")
+async def hello_command(interaction: Interaction):
+    await interaction.response.send_message(f"Hello, {interaction.user.mention}!")
+```
 
-- Both `run_windows.bat` and `run_linux.sh` will automatically install or update all dependencies from `requirements.txt` every time you start the project.
-- You do not need to manually run `pip install -r requirements.txt` unless you want to update dependencies outside the run scripts.
+Commands are automatically loaded on startup.
 
-### Subpath Mounting
+## Extending the Bot
 
-- To serve the web admin at a subpath (e.g., `/sjefbot`), set `SOUNDBOARD_WEB_ROOT_PATH=/sjefbot` in your `.env` file.
-- Leave it empty to serve at the root path (`/`).
-- Restart your app after changing this value.
+### Adding a New Service
 
-**Notes:**
-- All variables except `GUILD_ID` and `SOUNDBOARD_DB_PATH` are required for normal operation.
-- If `SOUNDBOARD_DB_PATH` is not set, the database defaults to `./soundboard.db` in the project root.
-- `SESSION_SECRET` must be the same for all web server instances to keep sessions valid.
-- `DISCORD_REDIRECT_URI` must match the value set in your Discord developer portal.
-- The minimum allowed interval for bot sound playback is 30 seconds.
+```python
+# services/my_service.py
+class MyService:
+    def __init__(self, client, event_bus):
+        self._client = client
+        self._event_bus = event_bus
+    
+    async def start(self):
+        # Subscribe to events, start background tasks
+        pass
+    
+    async def stop(self):
+        # Cleanup
+        pass
+```
+
+Register in `main.py`:
+```python
+my_service = MyService(client=bot, event_bus=event_bus)
+bot.register_service(my_service)
+```
+
+### Custom Events
+
+```python
+from core.events import Event, EventType, get_event_bus
+
+# Define new event type in core/events.py
+class EventType(Enum):
+    MY_CUSTOM_EVENT = auto()
+
+# Publish
+await event_bus.publish(Event(event_type=EventType.MY_CUSTOM_EVENT))
+
+# Subscribe
+event_bus.subscribe(EventType.MY_CUSTOM_EVENT, my_handler)
+```
+
+## Deployment
+
+### Reverse Proxy (nginx)
+
+```nginx
+location /sjefbot/ {
+    proxy_pass http://127.0.0.1:8000/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+}
+```
+
+Set `SOUNDBOARD_WEB_ROOT_PATH=/sjefbot` in `.env`.
+
+### Docker
+
+```dockerfile
+FROM python:3.11-slim
+RUN apt-get update && apt-get install -y ffmpeg
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["python", "main.py"]
+```
 
 ## Security Notes
-- Sessions are secured with a secret key from `.env` (`SESSION_SECRET`).
-- OAuth2 login is required for all admin actions.
-- The SQLite database path can be configured via `SOUNDBOARD_DB_PATH`.
 
-## Customization
-- To change the look and feel, edit the HTML/CSS in `soundboard_web.py`.
-- To add more Discord bot features, edit `main.py` and add new command modules.
+- OAuth2 login required for all admin actions
+- Session cookies are encrypted with a random key
+- Sounds are stored in SQLite, not the filesystem
+- Configure firewall to restrict web interface access if needed
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit changes: `git commit -am 'Add my feature'`
+4. Push to branch: `git push origin feature/my-feature`
+5. Open a Pull Request
 
 ## License
-MIT License
+
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-For issues or contributions, please open a pull request or issue on GitHub.
+**Issues or questions?** Open an issue on GitHub!

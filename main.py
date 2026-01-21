@@ -1,64 +1,82 @@
+"""
+SjefBot - Discord Soundboard Bot
 
-# Ensure the database is valid and all tables exist before anything else
-import os
-from db_util import ensure_valid_sqlite_db, ensure_tables_exist
-import importlib
-import pathlib
-import os
-from dotenv import load_dotenv
+Main entry point that wires together all components using dependency injection.
+"""
+
 import discord
-from discord import app_commands
-from tasks.voice_soundboard import periodic_voice_task
-from tasks.soundboard_event_watcher import soundboard_event_watcher
-import asyncio
 
-# Load environment variables from .env file
-load_dotenv()
-
-GUILD_ID = int(os.getenv('GUILD_ID'))
-DB_PATH = os.getenv("SOUNDBOARD_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), "soundboard.db")))
-ensure_valid_sqlite_db(DB_PATH)
-ensure_tables_exist(DB_PATH)
-
-class MyClient(discord.Client):
-    def __init__(self, *, intents: discord.Intents, interval=30):
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
-        self._soundboard_interval = interval
-        self._notify_channel_id = int(os.getenv("SOUNDBOARD_NOTIFY_CHANNEL_ID", "0"))
-        self._event_watcher = None
-
-    async def setup_hook(self):
-        commands_path = pathlib.Path(__file__).parent / "commands"
-        for file in commands_path.glob("*.py"):
-            if file.name.startswith("_"):
-                continue
-            mod_name = f"commands.{file.stem}"
-            mod = importlib.import_module(mod_name)
-            for obj in vars(mod).values():
-                if isinstance(obj, app_commands.Command):
-                    self.tree.add_command(obj, guild=discord.Object(id=GUILD_ID))
-        # Start the periodic voice task as a background task
-        asyncio.create_task(periodic_voice_task(self, interval=self._soundboard_interval, db_path=DB_PATH))
-        # Start the event watcher task (database-driven only)
-        if self._notify_channel_id:
-            asyncio.create_task(soundboard_event_watcher(self, self._notify_channel_id, db_path=DB_PATH))
+from core.config import Config
+from core.events import EventBus, set_event_bus
+from repositories import DatabaseManager, SoundRepository, ConfigRepository
+from bot import SjefBot
+from services import SoundboardService, NotificationService, WebServerService
 
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.guilds = True  # Required for channel cache and get_channel to work
+def create_intents() -> discord.Intents:
+    """Create Discord intents for the bot."""
+    intents = discord.Intents.default()
+    intents.message_content = True
+    intents.guilds = True  # Required for channel cache and get_channel
+    return intents
 
-try:
-    interval = int(os.getenv('SOUNDBOARD_INTERVAL', '30'))
-except ValueError:
-    interval = 30
 
-client = MyClient(intents=intents, interval=interval)
+def main() -> None:
+    """Main entry point for the bot."""
+    # Load configuration
+    config = Config.from_env()
+    
+    # Create event bus (singleton)
+    event_bus = EventBus()
+    set_event_bus(event_bus)
+    
+    # Create database manager and repositories
+    db_manager = DatabaseManager(config.soundboard_db_path)
+    sound_repository = SoundRepository(db_manager)
+    config_repository = ConfigRepository(db_manager)
+    
+    # Create bot client
+    intents = create_intents()
+    bot = SjefBot(
+        config=config,
+        event_bus=event_bus,
+        sound_repository=sound_repository,
+        config_repository=config_repository,
+        intents=intents,
+    )
+    
+    # Create and register services
+    soundboard_service = SoundboardService(
+        client=bot,
+        sound_repository=sound_repository,
+        config_repository=config_repository,
+        event_bus=event_bus,
+    )
+    bot.register_service(soundboard_service)
+    
+    if config.notify_channel_id:
+        notification_service = NotificationService(
+            client=bot,
+            event_bus=event_bus,
+            notify_channel_id=config.notify_channel_id,
+        )
+        bot.register_service(notification_service)
+    
+    # Create and register web server service (shares EventBus with bot)
+    web_service = WebServerService(
+        config=config,
+        sound_repository=sound_repository,
+        config_repository=config_repository,
+        event_bus=event_bus,
+        host=config.web_host,
+        port=config.web_port,
+    )
+    bot.register_service(web_service)
+    
+    # Run the bot
+    print("[Main] Starting SjefBot...")
+    bot.run(config.discord_bot_token)
 
-TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 
-if not TOKEN:
-    raise ValueError("DISCORD_BOT_TOKEN not set in environment. Please create a .env file.")
-
-client.run(TOKEN)
+if __name__ == "__main__":
+    main()

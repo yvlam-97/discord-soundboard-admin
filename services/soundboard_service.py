@@ -23,14 +23,14 @@ if TYPE_CHECKING:
 class SoundboardService:
     """
     Service that periodically plays random sounds in voice channels.
-    
+
     Features:
     - Joins the voice channel with the most members
     - Plays a random sound from the database
     - Interval can be changed at runtime via events
     - No database polling - uses event-driven updates
     """
-    
+
     def __init__(
         self,
         client: "SjefBot",
@@ -40,7 +40,7 @@ class SoundboardService:
     ):
         """
         Initialize the soundboard service.
-        
+
         Args:
             client: Discord bot client
             sound_repository: Repository for sound operations
@@ -51,63 +51,63 @@ class SoundboardService:
         self._sound_repo = sound_repository
         self._config_repo = config_repository
         self._event_bus = event_bus
-        
+
         self._task: asyncio.Task | None = None
         self._interval: int = 30  # Will be loaded from DB on start
         self._interval_changed = asyncio.Event()
         self._running = False
-    
+
     async def start(self) -> None:
         """Start the soundboard service."""
         # Load initial interval from database
         self._interval = self._config_repo.get_interval()
         print(f"[SoundboardService] Initial interval: {self._interval}s")
-        
+
         # Subscribe to interval change events
         self._event_bus.subscribe(EventType.INTERVAL_CHANGED, self._on_interval_changed)
-        
+
         # Start the background task
         self._running = True
         self._task = asyncio.create_task(self._run_loop())
-    
+
     async def stop(self) -> None:
         """Stop the soundboard service."""
         self._running = False
         self._interval_changed.set()  # Wake up any waiting sleep
-        
+
         if self._task:
             self._task.cancel()
             try:
                 await self._task
             except asyncio.CancelledError:
                 pass
-        
+
         self._event_bus.unsubscribe(EventType.INTERVAL_CHANGED, self._on_interval_changed)
-    
+
     async def _on_interval_changed(self, event: ConfigEvent) -> None:
         """Handle interval change events."""
         new_interval = int(event.value)
         print(f"[SoundboardService] Interval changed: {self._interval}s -> {new_interval}s")
         self._interval = new_interval
         self._interval_changed.set()  # Wake up the sleep to use new interval
-    
+
     async def _run_loop(self) -> None:
         """Main service loop."""
         await self._client.wait_until_ready()
-        
+
         while self._running and not self._client.is_closed():
             try:
                 await self._try_play_sound()
             except Exception as e:
                 print(f"[SoundboardService] Error: {e}")
-            
+
             # Sleep with ability to wake up early on interval change
             await self._interruptible_sleep(self._interval)
-    
+
     async def _interruptible_sleep(self, seconds: int) -> None:
         """
         Sleep that can be interrupted by interval changes.
-        
+
         Args:
             seconds: Number of seconds to sleep
         """
@@ -121,7 +121,7 @@ class SoundboardService:
         except asyncio.TimeoutError:
             # Normal sleep completion
             pass
-    
+
     async def _try_play_sound(self) -> None:
         """Attempt to play a sound in a voice channel."""
         # Check if we have any sounds
@@ -129,20 +129,20 @@ class SoundboardService:
         if sound_count == 0:
             print("[SoundboardService] No sounds in database, skipping")
             return
-        
+
         # Find a guild with occupied voice channels
         for guild in self._client.guilds:
             voice_channels = [
                 c for c in guild.voice_channels
                 if len(c.members) > 0
             ]
-            
+
             if not voice_channels:
                 continue
-            
+
             # Find channel with most members
             target_channel = max(voice_channels, key=lambda c: len(c.members))
-            
+
             # Only join if not already connected
             if guild.voice_client is None or not guild.voice_client.is_connected():
                 try:
@@ -150,11 +150,11 @@ class SoundboardService:
                     await self._play_random_sound(vc)
                 except Exception as e:
                     print(f"[SoundboardService] Failed to play sound: {e}")
-    
+
     async def _play_random_sound(self, vc: discord.VoiceClient) -> None:
         """
         Play a random sound in the voice channel.
-        
+
         Args:
             vc: Voice client to play through
         """
@@ -163,23 +163,23 @@ class SoundboardService:
             print("[SoundboardService] No sound found")
             await vc.disconnect()
             return
-        
+
         # Write to temporary file for FFmpeg
         suffix = os.path.splitext(sound.filename)[1]
         tmp_path = None
-        
+
         try:
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 tmp.write(sound.data)
                 tmp_path = tmp.name
-            
+
             source = discord.FFmpegPCMAudio(tmp_path)
             vc.play(source)
-            
+
             # Wait for playback to finish
             while vc.is_playing():
                 await asyncio.sleep(0.5)
-            
+
         finally:
             await vc.disconnect()
             if tmp_path and os.path.exists(tmp_path):

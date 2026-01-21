@@ -25,16 +25,16 @@ def main() -> None:
     """Main entry point for the bot."""
     # Load configuration
     config = Config.from_env()
-    
+
     # Create event bus (singleton)
     event_bus = EventBus()
     set_event_bus(event_bus)
-    
+
     # Create database manager and repositories
     db_manager = DatabaseManager(config.soundboard_db_path)
     sound_repository = SoundRepository(db_manager)
     config_repository = ConfigRepository(db_manager)
-    
+
     # Create bot client
     intents = create_intents()
     bot = SjefBot(
@@ -44,7 +44,7 @@ def main() -> None:
         config_repository=config_repository,
         intents=intents,
     )
-    
+
     # Create and register services
     soundboard_service = SoundboardService(
         client=bot,
@@ -53,7 +53,7 @@ def main() -> None:
         event_bus=event_bus,
     )
     bot.register_service(soundboard_service)
-    
+
     if config.notify_channel_id:
         notification_service = NotificationService(
             client=bot,
@@ -61,7 +61,7 @@ def main() -> None:
             notify_channel_id=config.notify_channel_id,
         )
         bot.register_service(notification_service)
-    
+
     # Create and register web server service (shares EventBus with bot)
     web_service = WebServerService(
         config=config,
@@ -72,7 +72,7 @@ def main() -> None:
         port=config.web_port,
     )
     bot.register_service(web_service)
-    
+
     # Run the bot
     print("[Main] Starting SjefBot...")
     bot.run(config.discord_bot_token)

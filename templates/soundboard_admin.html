@@ -1,301 +1,745 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Soundboard Admin</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SjefBot - Soundboard Admin</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#5865f2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
-            background: #313338;
-            color: #dbdee1;
+        :root {
+            --bg-primary: #1e1f22;
+            --bg-secondary: #2b2d31;
+            --bg-tertiary: #313338;
+            --bg-card: #383a40;
+            --text-primary: #f2f3f5;
+            --text-secondary: #b5bac1;
+            --text-muted: #949ba4;
+            --accent: #5865f2;
+            --accent-hover: #4752c4;
+            --success: #23a559;
+            --success-hover: #1a7f42;
+            --danger: #da373c;
+            --danger-hover: #a12d2f;
+            --warning: #f0b232;
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
-        .container {
-            max-width: 640px;
-            margin: 48px auto;
-            background: #23272a;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px #000a;
-            padding: 36px 32px 28px 32px;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--bg-card);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            font-size: 28px;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            margin-bottom: 22px;
+            gap: 12px;
+            background: var(--bg-tertiary);
+            padding: 8px 16px 8px 8px;
+            border-radius: 50px;
         }
 
         .user-avatar {
-            width: 48px;
-            height: 48px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            margin-right: 16px;
-            border: 2px solid #5865f2;
-            background: #23272a;
+            border: 2px solid var(--accent);
+            object-fit: cover;
         }
 
-        h2,
-        h3 {
-            color: #5865f2;
-            margin-top: 0;
-            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
-            letter-spacing: 0.5px;
+        .user-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
         }
 
-        form {
+        /* Main Content */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 24px;
             margin-bottom: 24px;
+            box-shadow: var(--shadow);
         }
 
-        input[type="file"] {
-            background: #23272a;
-            color: #dbdee1;
-            border: 1px solid #444;
-            border-radius: 8px;
-            padding: 8px;
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
-        input[type="submit"],
-        button {
-            background: #5865f2;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 18px;
-            font-weight: bold;
+        .card-icon {
+            font-size: 24px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Forms */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-row > .btn {
+            margin-top: 28px; /* Align with input (label height + margin) */
+            align-self: stretch;
+            max-height: 48px; /* Match input height */
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 2px solid transparent;
+            border-radius: var(--border-radius-sm);
+            padding: 12px 16px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-primary);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-input[type="file"] {
+            padding: 10px 16px;
             cursor: pointer;
-            margin-left: 8px;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
-            box-shadow: 0 2px 8px #23272a33;
         }
 
-        input[type="submit"]:hover,
-        button:hover {
-            background: #4752c4;
-            color: #fff;
-            box-shadow: 0 4px 16px #23272a55;
+        .form-input[type="file"]::file-selector-button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 12px;
+            transition: var(--transition);
         }
 
-        ul {
+        .form-input[type="file"]::file-selector-button:hover {
+            background: var(--accent-hover);
+        }
+
+        .form-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .form-hint.warning {
+            color: var(--warning);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--success-hover);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        .btn-icon {
+            padding: 10px;
+            min-width: 42px;
+            min-height: 42px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        /* Sound List */
+        .sound-list {
             list-style: none;
-            padding: 0;
         }
 
         .sound-item {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            background: #2b2d31;
-            border-bottom: 1px solid #23272a;
-            padding: 12px 0;
-            border-radius: 8px;
-            margin-bottom: 6px;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 8px;
+            transition: var(--transition);
+        }
+
+        .sound-item:hover {
+            background: var(--bg-card);
+        }
+
+        .sound-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .sound-info {
+            flex: 1;
+            min-width: 0;
         }
 
         .sound-filename {
-            flex: 1;
-            font-size: 1.12em;
-            word-break: break-all;
-            color: #fff;
+            font-weight: 500;
+            color: var(--text-primary);
+            word-break: break-word;
         }
 
         .sound-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
-        .play-btn {
-            font-size: 1.3em;
-            text-decoration: none;
-            color: #57f287;
-            transition: color 0.2s;
-            margin: 0;
-            padding: 0 4px;
+        /* Audio Player */
+        .audio-player {
+            width: 100%;
+            max-width: 250px;
+            height: 36px;
+            border-radius: 18px;
         }
 
-        .play-btn:hover {
-            color: #43b581;
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
         }
 
-        .rename-form {
-            display: inline;
-            margin: 0;
-            padding: 0;
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
         }
 
-        .rename-input {
-            background: #23272a;
-            color: #dbdee1;
-            border: 1px solid #5865f2;
-            border-radius: 6px;
-            padding: 2px 8px;
-            margin-right: 2px;
-            font-family: 'gg sans', 'Segoe UI', Arial, sans-serif;
-            width: 220px;
+        .empty-state-text {
+            font-size: 1rem;
         }
 
-        .rename-form.active .rename-input {
-            display: inline-block;
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .rename-btn,
-        .confirm-rename-btn,
-        .cancel-rename-btn {
-            background: #5865f2;
-            color: #fff;
-            border: none;
-            font-size: 1.1em;
-            cursor: pointer;
-            padding: 0 8px;
-            border-radius: 6px;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 8px #23272a33;
+        .stat {
+            background: var(--bg-tertiary);
+            padding: 16px 20px;
+            border-radius: var(--border-radius-sm);
+            flex: 1;
+            min-width: 140px;
         }
 
-        .rename-btn:hover,
-        .confirm-rename-btn:hover,
-        .cancel-rename-btn:hover {
-            background: #4752c4;
-            color: #fff;
-            box-shadow: 0 4px 16px #23272a55;
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
         }
 
-        .confirm-rename-btn {
-            margin-left: 4px;
-            background: #57f287;
-            color: #23272a;
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
         }
 
-        .confirm-rename-btn:hover {
-            background: #43b581;
-            color: #fff;
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
         }
 
-        .cancel-rename-btn {
-            margin-left: 4px;
-            background: #ed4245;
-            color: #fff;
+        .modal-overlay.active {
+            display: flex;
         }
 
-        .cancel-rename-btn:hover {
-            background: #a12d2f;
-            color: #fff;
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow);
         }
 
-        .delete-form {
-            display: inline;
-            margin: 0;
-            padding: 0;
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
         }
 
-        .delete-btn {
-            background: #ed4245;
-            color: #fff;
-            border: none;
-            font-size: 1.2em;
-            cursor: pointer;
-            padding: 0 8px;
-            border-radius: 6px;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 8px #23272a33;
+        .modal-text {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
         }
 
-        .delete-btn:hover {
-            background: #a12d2f;
-            color: #fff;
-            box-shadow: 0 4px 16px #23272a55;
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Rename inline form */
+        .rename-container {
+            display: none;
+            flex: 1;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .rename-container.active {
+            display: flex;
+        }
+
+        .rename-container .form-input {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .sound-item.renaming .sound-info {
+            display: none;
+        }
+
+        .sound-item.renaming .rename-container {
+            display: flex;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .user-info {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-group {
+                width: 100%;
+            }
+
+            .form-row > .btn {
+                margin-top: 0;
+                width: 100%;
+            }
+
+            .sound-item {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .sound-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+
+            .stats {
+                flex-direction: column;
+            }
+
+            .stat {
+                min-width: 100%;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .sound-item {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-card);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="user-info" style="margin-bottom: 24px;">
-            {% if avatar_url %}
-            <img class="user-avatar" src="{{ avatar_url }}" alt="avatar">
-            {% endif %}
-            <span style="font-size:1.1em; font-weight:bold;">{{ username }}</span>
-        </div>
-        <h2 style="margin-bottom: 10px;">Soundboard Admin</h2>
-        <form action="set-interval" method="post"
-            style="margin-bottom: 6px; display: flex; align-items: center; gap: 12px;">
-            <label for="interval" style="color:#dbdee1; font-weight:500; font-size:1.08em;">Bot sound delay
-                (seconds):</label>
-            <input id="interval" name="interval" type="number" min="30" max="3600" value="{{ interval_value }}"
-                style="width:100px; font-size:1.08em; background:#23272a; color:#dbdee1; border:1px solid #444; border-radius:6px; margin-left:8px;">
-            <input type="submit" value="Save" style="margin-left:8px;">
-        </form>
-        <div style="margin-bottom:12px; color:#aaa; font-size:0.98em; margin-top:-8px;">
-            <span style="color:#ed4245;">Minimum: 30 seconds</span>
-        </div>
-        </form>
-        <form action="upload" enctype="multipart/form-data" method="post"
-            style="margin-bottom: 30px; display: flex; align-items: center; gap: 12px;">
-            <label for="file" style="color:#dbdee1; font-weight:500;">Upload New Sound (.mp3):</label>
-            <input name="file" id="file" type="file" accept="audio/mp3" required style="margin-left:10px;">
-            <input type="submit" value="Upload">
-        </form>
-        <h3 style="margin-bottom: 10px;">Available Sound Effects</h3>
-        <ul>
-            {% for fname in files %}
-            <li class="sound-item">
-                <span class="sound-filename">{{ fname }}</span>
-                <div class="sound-actions">
-                    <a class="play-btn" href="download/{{ fname }}" title="Play" target="_blank">▶️</a>
-                    <form class="rename-form" action="rename" method="post"
-                        style="display:inline; margin:0; padding:0;">
-                        <input type="hidden" name="old_filename" value="{{ fname }}">
-                        <input class="rename-input" type="text" name="new_filename" value="{{ fname }}" maxlength="64"
-                            required>
-                        <button class="rename-btn" type="submit" title="Rename">✏️</button>
-                    </form>
-                    <form class="delete-form" action="delete" method="post">
-                        <input type="hidden" name="filename" value="{{ fname }}">
-                        <button class="delete-btn" type="submit" title="Delete">🗑️</button>
-                    </form>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <span class="logo-icon">🔊</span>
+                <span class="logo-text">SjefBot</span>
+            </a>
+            <div class="user-info">
+                {% if avatar_url %}
+                <img class="user-avatar" src="{{ avatar_url }}" alt="Avatar">
+                {% else %}
+                <div class="user-avatar" style="background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                    {{ username[0] | upper }}
                 </div>
-            </li>
-            {% endfor %}
-        </ul>
+                {% endif %}
+                <span class="user-name">{{ username }}</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">{{ files | length }}</div>
+                <div class="stat-label">Total Sounds</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ interval_value }}s</div>
+                <div class="stat-label">Play Interval</div>
+            </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-icon">⚙️</span>
+                <div>
+                    <h2 class="card-title">Settings</h2>
+                    <p class="card-subtitle">Configure bot behavior</p>
+                </div>
+            </div>
+            <form action="set-interval" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="interval">Sound Play Interval (seconds)</label>
+                        <input class="form-input" id="interval" name="interval" type="number" 
+                               min="30" max="3600" value="{{ interval_value }}" 
+                               placeholder="30">
+                        <p class="form-hint warning">⚠️ Minimum: 30 seconds, Maximum: 3600 seconds</p>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        💾 Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-icon">📤</span>
+                <div>
+                    <h2 class="card-title">Upload Sound</h2>
+                    <p class="card-subtitle">Add new sounds to your library</p>
+                </div>
+            </div>
+            <form action="upload" enctype="multipart/form-data" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="file">Sound File</label>
+                        <input class="form-input" name="file" id="file" type="file" 
+                               accept="audio/mp3,audio/mpeg,.mp3" required>
+                        <p class="form-hint">MP3 files only, max 1MB</p>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        ⬆️ Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sound Library Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-icon">🎵</span>
+                <div>
+                    <h2 class="card-title">Sound Library</h2>
+                    <p class="card-subtitle">Manage your uploaded sounds</p>
+                </div>
+            </div>
+            
+            {% if files %}
+            <ul class="sound-list">
+                {% for fname in files %}
+                <li class="sound-item" data-filename="{{ fname }}">
+                    <span class="sound-icon">🎶</span>
+                    <div class="sound-info">
+                        <span class="sound-filename">{{ fname }}</span>
+                    </div>
+                    
+                    <!-- Rename Form (inline) -->
+                    <form class="rename-container" action="rename" method="post">
+                        <input type="hidden" name="old_filename" value="{{ fname }}">
+                        <input class="form-input" type="text" name="new_filename" 
+                               value="{{ fname }}" maxlength="64" required 
+                               placeholder="New filename">
+                        <button type="submit" class="btn btn-success btn-icon" title="Save">✓</button>
+                        <button type="button" class="btn btn-ghost btn-icon cancel-rename" title="Cancel">✕</button>
+                    </form>
+                    
+                    <div class="sound-actions">
+                        <audio controls class="audio-player" preload="none">
+                            <source src="download/{{ fname }}" type="audio/mpeg">
+                        </audio>
+                        <button type="button" class="btn btn-ghost btn-icon rename-btn" title="Rename">✏️</button>
+                        <button type="button" class="btn btn-danger btn-icon delete-btn" 
+                                data-filename="{{ fname }}" title="Delete">🗑️</button>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🔇</div>
+                <p class="empty-state-text">No sounds uploaded yet.<br>Upload your first sound above!</p>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h3 class="modal-title">Delete Sound?</h3>
+            <p class="modal-text">Are you sure you want to delete <strong id="deleteFilename"></strong>? This action cannot be undone.</p>
+            <form action="delete" method="post" id="deleteForm">
+                <input type="hidden" name="filename" id="deleteInput">
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger">🗑️ Delete</button>
+                </div>
+            </form>
+        </div>
     </div>
+
     <script>
-        function activateRename(btn) {
-            const form = btn.closest('.rename-form');
-            form.classList.add('active');
-            form.querySelector('.rename-input').style.display = 'inline-block';
-            form.querySelector('.confirm-rename-btn').style.display = 'inline-block';
-            form.querySelector('.cancel-rename-btn').style.display = 'inline-block';
-            form.querySelector('.rename-hint').style.display = 'inline-block';
-            btn.style.display = 'none';
-            form.querySelector('.rename-input').focus();
-            form.onsubmit = function (e) {
-                e.preventDefault();
-                submitRename(form.querySelector('.confirm-rename-btn'));
-            };
+        // Rename functionality
+        document.querySelectorAll('.rename-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const item = this.closest('.sound-item');
+                item.classList.add('renaming');
+                const input = item.querySelector('.rename-container input[name="new_filename"]');
+                input.focus();
+                input.select();
+            });
+        });
+
+        document.querySelectorAll('.cancel-rename').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const item = this.closest('.sound-item');
+                item.classList.remove('renaming');
+                // Reset input value
+                const input = item.querySelector('.rename-container input[name="new_filename"]');
+                input.value = item.dataset.filename;
+            });
+        });
+
+        // Delete modal functionality
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filename = this.dataset.filename;
+                document.getElementById('deleteFilename').textContent = filename;
+                document.getElementById('deleteInput').value = filename;
+                document.getElementById('deleteModal').classList.add('active');
+            });
+        });
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
         }
-        function cancelRename(btn) {
-            const form = btn.closest('.rename-form');
-            form.classList.remove('active');
-            form.querySelector('.rename-input').style.display = 'none';
-            form.querySelector('.confirm-rename-btn').style.display = 'none';
-            form.querySelector('.cancel-rename-btn').style.display = 'none';
-            form.querySelector('.rename-hint').style.display = 'none';
-            form.querySelector('.rename-btn').style.display = 'inline-block';
-        }
-        function submitRename(btn) {
-            const form = btn.closest('.rename-form');
-            form.classList.remove('active');
-            form.querySelector('.rename-btn').style.display = 'inline-block';
-            form.querySelector('.rename-input').style.display = 'none';
-            form.querySelector('.confirm-rename-btn').style.display = 'none';
-            form.querySelector('.cancel-rename-btn').style.display = 'none';
-            form.querySelector('.rename-hint').style.display = 'none';
-            form.submit();
-        }
+
+        // Close modal on overlay click
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+                // Also cancel any active renames
+                document.querySelectorAll('.sound-item.renaming').forEach(item => {
+                    item.classList.remove('renaming');
+                    const input = item.querySelector('.rename-container input[name="new_filename"]');
+                    input.value = item.dataset.filename;
+                });
+            }
+        });
     </script>
 </body>
 

@@ -1,9 +1,12 @@
-
+import os
 import asyncio
 import discord
 import sqlite3
 import tempfile
+from dotenv import load_dotenv
 from db_util import ensure_tables_exist
+
+load_dotenv()
 
 async def play_random_sound(vc, db_path):
     # Fetch a random sound from the SQLite database
@@ -24,10 +27,6 @@ async def play_random_sound(vc, db_path):
             await asyncio.sleep(1)
         await vc.disconnect()
         os.remove(tmp_path)
-        # Update last played timestamp in the database
-        import time
-        with sqlite3.connect(db_path) as conn:
-            conn.execute("UPDATE soundboard_state SET last_played = ? WHERE id = 1", (int(time.time()),))
     except Exception as e:
         print(f"Error playing sound: {e}")
 

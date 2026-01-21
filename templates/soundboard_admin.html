@@ -157,10 +157,12 @@
             min-width: 200px;
         }
 
-        .form-row > .btn {
-            margin-top: 28px; /* Align with input (label height + margin) */
+        .form-row>.btn {
+            margin-top: 28px;
+            /* Align with input (label height + margin) */
             align-self: stretch;
-            max-height: 48px; /* Match input height */
+            max-height: 48px;
+            /* Match input height */
         }
 
         .form-label {
@@ -473,7 +475,7 @@
                 width: 100%;
             }
 
-            .form-row > .btn {
+            .form-row>.btn {
                 margin-top: 0;
                 width: 100%;
             }
@@ -504,8 +506,15 @@
 
         /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .card {
@@ -549,7 +558,8 @@
                 {% if avatar_url %}
                 <img class="user-avatar" src="{{ avatar_url }}" alt="Avatar">
                 {% else %}
-                <div class="user-avatar" style="background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                <div class="user-avatar"
+                    style="background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600;">
                     {{ username[0] | upper }}
                 </div>
                 {% endif %}
@@ -585,9 +595,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="interval">Sound Play Interval (seconds)</label>
-                        <input class="form-input" id="interval" name="interval" type="number" 
-                               min="30" max="3600" value="{{ interval_value }}" 
-                               placeholder="30">
+                        <input class="form-input" id="interval" name="interval" type="number" min="30" max="3600"
+                            value="{{ interval_value }}" placeholder="30">
                         <p class="form-hint warning">⚠️ Minimum: 30 seconds, Maximum: 3600 seconds</p>
                     </div>
                     <button type="submit" class="btn btn-primary">
@@ -610,8 +619,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="file">Sound File</label>
-                        <input class="form-input" name="file" id="file" type="file" 
-                               accept="audio/mp3,audio/mpeg,.mp3" required>
+                        <input class="form-input" name="file" id="file" type="file" accept="audio/mp3,audio/mpeg,.mp3"
+                            required>
                         <p class="form-hint">MP3 files only, max 1MB</p>
                     </div>
                     <button type="submit" class="btn btn-success">
@@ -630,7 +639,7 @@
                     <p class="card-subtitle">Manage your uploaded sounds</p>
                 </div>
             </div>
-            
+
             {% if files %}
             <ul class="sound-list">
                 {% for fname in files %}
@@ -639,24 +648,23 @@
                     <div class="sound-info">
                         <span class="sound-filename">{{ fname }}</span>
                     </div>
-                    
+
                     <!-- Rename Form (inline) -->
                     <form class="rename-container" action="rename" method="post">
                         <input type="hidden" name="old_filename" value="{{ fname }}">
-                        <input class="form-input" type="text" name="new_filename" 
-                               value="{{ fname }}" maxlength="64" required 
-                               placeholder="New filename">
+                        <input class="form-input" type="text" name="new_filename" value="{{ fname }}" maxlength="64"
+                            required placeholder="New filename">
                         <button type="submit" class="btn btn-success btn-icon" title="Save">✓</button>
                         <button type="button" class="btn btn-ghost btn-icon cancel-rename" title="Cancel">✕</button>
                     </form>
-                    
+
                     <div class="sound-actions">
                         <audio controls class="audio-player" preload="none">
                             <source src="download/{{ fname }}" type="audio/mpeg">
                         </audio>
                         <button type="button" class="btn btn-ghost btn-icon rename-btn" title="Rename">✏️</button>
-                        <button type="button" class="btn btn-danger btn-icon delete-btn" 
-                                data-filename="{{ fname }}" title="Delete">🗑️</button>
+                        <button type="button" class="btn btn-danger btn-icon delete-btn" data-filename="{{ fname }}"
+                            title="Delete">🗑️</button>
                     </div>
                 </li>
                 {% endfor %}
@@ -674,7 +682,8 @@
     <div class="modal-overlay" id="deleteModal">
         <div class="modal">
             <h3 class="modal-title">Delete Sound?</h3>
-            <p class="modal-text">Are you sure you want to delete <strong id="deleteFilename"></strong>? This action cannot be undone.</p>
+            <p class="modal-text">Are you sure you want to delete <strong id="deleteFilename"></strong>? This action
+                cannot be undone.</p>
             <form action="delete" method="post" id="deleteForm">
                 <input type="hidden" name="filename" id="deleteInput">
                 <div class="modal-actions">
@@ -688,7 +697,7 @@
     <script>
         // Rename functionality
         document.querySelectorAll('.rename-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const item = this.closest('.sound-item');
                 item.classList.add('renaming');
                 const input = item.querySelector('.rename-container input[name="new_filename"]');
@@ -698,7 +707,7 @@
         });
 
         document.querySelectorAll('.cancel-rename').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const item = this.closest('.sound-item');
                 item.classList.remove('renaming');
                 // Reset input value
@@ -709,7 +718,7 @@
 
         // Delete modal functionality
         document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function () {
                 const filename = this.dataset.filename;
                 document.getElementById('deleteFilename').textContent = filename;
                 document.getElementById('deleteInput').value = filename;
@@ -722,14 +731,14 @@
         }
 
         // Close modal on overlay click
-        document.getElementById('deleteModal').addEventListener('click', function(e) {
+        document.getElementById('deleteModal').addEventListener('click', function (e) {
             if (e.target === this) {
                 closeDeleteModal();
             }
         });
 
         // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeDeleteModal();
                 // Also cancel any active renames

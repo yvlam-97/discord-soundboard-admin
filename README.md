@@ -30,6 +30,7 @@ This project provides a Discord bot with a web-based soundboard admin interface.
    ```sh
    pip install -r requirements.txt
    ```
+   > **Note:** Both `run_windows.bat` and `run_linux.sh` will automatically update dependencies from `requirements.txt` every time you start the project.
 
 4. **Configure environment variables:**
    Create a `.env` file in the project root with the following:
@@ -43,19 +44,22 @@ This project provides a Discord bot with a web-based soundboard admin interface.
    GUILD_ID=your_guild_id_here  # Optional
    SOUNDBOARD_WEB_HOST=0.0.0.0         # Optional, defaults to 127.0.0.1
    SOUNDBOARD_WEB_PORT=8080            # Optional, defaults to 8080
+   SOUNDBOARD_WEB_ROOT_PATH=/sjefbot    # Optional, for subpath mounting (see below)
    ```
 
 5. **Run the bot and web server:**
-   ```sh
-   python main.py
-   # or (web admin only, host/port configurable via .env)
-   uvicorn soundboard_web:app --host $SOUNDBOARD_WEB_HOST --port $SOUNDBOARD_WEB_PORT
-   # Defaults: --host 127.0.0.1 --port 8080
-   ```
+   - On Linux:
+     ```sh
+     ./run_linux.sh
+     ```
+   - On Windows:
+     ```bat
+     .\run_windows.bat
+     ```
+   > Both scripts will activate the virtual environment and update dependencies before starting the bot and web server.
 
 6. **Access the web interface:**
    Open [http://localhost:8080](http://localhost:8080) in your browser. Log in with your Discord account.
-
 
 ## Configuration
 
@@ -73,7 +77,7 @@ All configuration is handled via environment variables in your `.env` file:
 | `GUILD_ID`              | (Optional) Your Discord server's guild ID (for some features)    |                                  |
 | `SOUNDBOARD_WEB_HOST`   | Host for the web admin (FastAPI/uvicorn)                         | 127.0.0.1                        |
 | `SOUNDBOARD_WEB_PORT`   | Port for the web admin (FastAPI/uvicorn)                         | 8080                             |
-| `SOUNDBOARD_WEB_ROOT_PATH` | (Optional) Root path for FastAPI app (for subpath mounting, e.g. /sjefbot) | (empty string for root)          |
+| `SOUNDBOARD_WEB_ROOT_PATH` | (Optional) Root path for FastAPI app (for subpath mounting, e.g. /sjefbot) | (empty string for root, or e.g. /sjefbot) |
 
 
 ### Sound Interval
@@ -81,7 +85,16 @@ All configuration is handled via environment variables in your `.env` file:
 - The bot's sound playback interval is configurable from the web admin page.
 - **Minimum allowed interval is 30 seconds.**
 
+### Running & Dependency Management
 
+- Both `run_windows.bat` and `run_linux.sh` will automatically install or update all dependencies from `requirements.txt` every time you start the project.
+- You do not need to manually run `pip install -r requirements.txt` unless you want to update dependencies outside the run scripts.
+
+### Subpath Mounting
+
+- To serve the web admin at a subpath (e.g., `/sjefbot`), set `SOUNDBOARD_WEB_ROOT_PATH=/sjefbot` in your `.env` file.
+- Leave it empty to serve at the root path (`/`).
+- Restart your app after changing this value.
 
 **Notes:**
 - All variables except `GUILD_ID` and `SOUNDBOARD_DB_PATH` are required for normal operation.
@@ -89,8 +102,6 @@ All configuration is handled via environment variables in your `.env` file:
 - `SESSION_SECRET` must be the same for all web server instances to keep sessions valid.
 - `DISCORD_REDIRECT_URI` must match the value set in your Discord developer portal.
 - The minimum allowed interval for bot sound playback is 30 seconds.
-- Set `SOUNDBOARD_WEB_ROOT_PATH=/sjefbot` in your `.env` to serve the app at a subpath (e.g., https://yourdomain/sjefbot/), or leave it empty for root. Restart your app after changing this value.
-
 
 ## Security Notes
 - Sessions are secured with a secret key from `.env` (`SESSION_SECRET`).

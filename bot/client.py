@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from repositories import SoundRepository, ConfigRepository
 
 
-class SjefBot(discord.Client):
+class AudioAmbush(discord.Client):
     """
     Main Discord bot client with dependency injection.
 

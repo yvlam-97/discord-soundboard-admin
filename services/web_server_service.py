@@ -16,7 +16,7 @@ from repositories import SoundRepository, ConfigRepository
 from web import create_web_app
 
 if TYPE_CHECKING:
-    from bot.client import SjefBot
+    from bot.client import AudioAmbush
 
 
 class WebServerService:

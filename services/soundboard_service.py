@@ -16,7 +16,7 @@ import discord
 from core.events import EventBus, EventType, ConfigEvent
 
 if TYPE_CHECKING:
-    from bot.client import SjefBot
+    from bot.client import AudioAmbush
     from repositories import SoundRepository, ConfigRepository
 
 
@@ -33,7 +33,7 @@ class SoundboardService:
 
     def __init__(
         self,
-        client: "SjefBot",
+        client: "AudioAmbush",
         sound_repository: "SoundRepository",
         config_repository: "ConfigRepository",
         event_bus: EventBus,

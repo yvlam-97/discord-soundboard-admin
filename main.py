@@ -1,5 +1,5 @@
 """
-SjefBot - Discord Soundboard Bot
+Audio Ambush - Discord Soundboard Bot
 
 Main entry point that wires together all components using dependency injection.
 """
@@ -9,7 +9,7 @@ import discord
 from core.config import Config
 from core.events import EventBus, set_event_bus
 from repositories import DatabaseManager, SoundRepository, ConfigRepository
-from bot import SjefBot
+from bot import AudioAmbush
 from services import SoundboardService, NotificationService, WebServerService
 
 
@@ -37,7 +37,7 @@ def main() -> None:
 
     # Create bot client
     intents = create_intents()
-    bot = SjefBot(
+    bot = AudioAmbush(
         config=config,
         event_bus=event_bus,
         sound_repository=sound_repository,
@@ -74,7 +74,7 @@ def main() -> None:
     bot.register_service(web_service)
 
     # Run the bot
-    print("[Main] Starting SjefBot...")
+    print("[Main] Starting Audio Ambush...")
     bot.run(config.discord_bot_token)
 
 

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from core.events import EventBus, EventType, SoundEvent, ConfigEvent
 
 if TYPE_CHECKING:
-    from bot.client import SjefBot
+    from bot.client import AudioAmbush
 
 
 class NotificationService:
@@ -25,7 +25,7 @@ class NotificationService:
 
     def __init__(
         self,
-        client: "SjefBot",
+        client: "AudioAmbush",
         event_bus: EventBus,
         notify_channel_id: int,
     ):

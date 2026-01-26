@@ -1,18 +1,15 @@
 @echo off
-REM Activate the virtual environment
+REM Change to script directory
+cd /d "%~dp0"
 
-call "%~dp0bot-env\Scripts\activate.bat"
+REM Activate the virtual environment
+call bot-env\Scripts\activate.bat
+
+REM Install/update dependencies
 python -m pip install -r requirements.txt
 
-REM Start the bot in a new window
-title audio-ambush-bot
+REM Run the bot (web server is integrated)
+title Audio Ambush
+python main.py
 
-start cmd /k python main.py
-
-REM Start the web server in a new window
-title audio-ambush-web
-
-start cmd /k python -m uvicorn soundboard_web:app --host 127.0.0.1 --port 8080
-
-echo Both bot and web server started in separate windows.
 pause

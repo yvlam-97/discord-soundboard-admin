@@ -4,14 +4,14 @@ A Discord bot that periodically joins voice channels and plays random sounds fro
 
 ## Features
 
-- 🔊 **Automatic Soundboard** - Bot joins the most populated voice channel and plays random sounds at configurable intervals
-- �️ **Volume Control** - Adjust playback volume via web interface or Discord commands
-- 🌐 **Web Admin Interface** - Upload, rename, and delete sounds through a modern web UI
-- 🔐 **Discord OAuth2** - Secure authentication using your Discord account
-- 📢 **Real-time Notifications** - Get Discord messages when sounds are added, renamed, deleted, or settings changed
-- ⚡ **Event-Driven Architecture** - No database polling; instant updates via pub/sub pattern
-- 💾 **SQLite Storage** - Sounds stored as BLOBs for easy backup and portability
-- 🤖 **Slash Commands** - `/list`, `/status`, `/volume`, and `/ping` commands
+- **Automatic Soundboard** - Bot joins the most populated voice channel and plays random sounds at configurable intervals
+- **Volume Control** - Adjust playback volume via web interface or Discord commands
+- **Web Admin Interface** - Upload, rename, and delete sounds through a modern web UI
+- **Discord OAuth2** - Secure authentication using your Discord account
+- **Real-time Notifications** - Get Discord messages when sounds are added, renamed, deleted, or settings changed
+- **Event-Driven Architecture** - No database polling; instant updates via pub/sub pattern
+- **SQLite Storage** - Sounds stored as BLOBs for easy backup and portability
+- **Slash Commands** - `/list`, `/status`, `/volume`, and `/ping` commands
 
 ## Architecture
 
@@ -88,7 +88,7 @@ Web Upload → SoundRepository.create() → EventBus.publish(SOUND_UPLOADED, sou
         NotificationService._on_sound_uploaded()
                     │
                     ▼
-        Discord Channel: "📥 Sound uploaded: **mysound.mp3** (web)"
+        Discord Channel: "Sound uploaded: **mysound.mp3** (web)"
 ```
 
 Events include a `source` field to indicate where the action originated (e.g., "web" for web interface actions).
@@ -169,18 +169,18 @@ Events include a `source` field to indicate where the action originated (e.g., "
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DISCORD_BOT_TOKEN` | ✅ | - | Bot token from Discord Developer Portal |
-| `GUILD_ID` | ✅ | - | Your Discord server ID |
-| `DISCORD_CLIENT_ID` | ✅ | - | OAuth2 client ID for web login |
-| `DISCORD_CLIENT_SECRET` | ✅ | - | OAuth2 client secret |
-| `DISCORD_REDIRECT_URI` | ✅ | - | OAuth2 callback URL (must match portal) |
-| `SOUNDBOARD_DB_PATH` | ❌ | `./soundboard.db` | SQLite database path |
-| `SOUNDBOARD_INTERVAL` | ❌ | `30` | Seconds between sound plays (30-3600) |
-| `SOUNDBOARD_VOLUME` | ❌ | `100` | Playback volume percentage (0-100) |
-| `SOUNDBOARD_NOTIFY_CHANNEL_ID` | ❌ | - | Channel for upload/delete notifications |
-| `SOUNDBOARD_WEB_HOST` | ❌ | `0.0.0.0` | Web server bind address |
-| `SOUNDBOARD_WEB_PORT` | ❌ | `8000` | Web server port |
-| `SOUNDBOARD_WEB_ROOT_PATH` | ❌ | `` | URL prefix for reverse proxy setups |
+| `DISCORD_BOT_TOKEN` | Yes | - | Bot token from Discord Developer Portal |
+| `GUILD_ID` | Yes | - | Your Discord server ID |
+| `DISCORD_CLIENT_ID` | Yes | - | OAuth2 client ID for web login |
+| `DISCORD_CLIENT_SECRET` | Yes | - | OAuth2 client secret |
+| `DISCORD_REDIRECT_URI` | Yes | - | OAuth2 callback URL (must match portal) |
+| `SOUNDBOARD_DB_PATH` | No | `./soundboard.db` | SQLite database path |
+| `SOUNDBOARD_INTERVAL` | No | `30` | Seconds between sound plays (30-3600) |
+| `SOUNDBOARD_VOLUME` | No | `100` | Playback volume percentage (0-100) |
+| `SOUNDBOARD_NOTIFY_CHANNEL_ID` | No | - | Channel for upload/delete notifications |
+| `SOUNDBOARD_WEB_HOST` | No | `0.0.0.0` | Web server bind address |
+| `SOUNDBOARD_WEB_PORT` | No | `8000` | Web server port |
+| `SOUNDBOARD_WEB_ROOT_PATH` | No | `` | URL prefix for reverse proxy setups |
 
 ## Discord Bot Setup
 
@@ -248,13 +248,13 @@ bot.register_service(my_service)
 ### Custom Events
 
 ```python
-from core.events import Event, EventType, ConfigEvent, get_event_bus
+from core.events import EventType, ConfigEvent
 
 # Define new event type in core/events.py
 class EventType(Enum):
     MY_CUSTOM_EVENT = auto()
 
-# Publish (use source to track origin)
+# Publish (use source to track origin, event_bus is injected via constructor)
 await event_bus.publish(ConfigEvent(
     event_type=EventType.MY_CUSTOM_EVENT,
     key="my_key",
@@ -321,7 +321,7 @@ CMD ["python", "main.py"]
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License
 
 ---
 

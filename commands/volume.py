@@ -25,9 +25,8 @@ async def volume_command(interaction: Interaction, level: int):
     config_repo = bot.config_repository
     event_bus = bot.event_bus
     
-    # Update volume
-    old_volume = config_repo.get_volume()
-    config_repo.set_volume(level)
+    # Update volume (set_volume returns old value)
+    old_volume = config_repo.set_volume(level)
     
     # Publish event
     await event_bus.publish(ConfigEvent(

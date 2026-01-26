@@ -18,7 +18,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from core.config import Config
 from core.events import EventBus, EventType, SoundEvent, ConfigEvent
-from repositories import DatabaseManager, SoundRepository, ConfigRepository
+from repositories import SoundRepository, ConfigRepository
 
 
 # Constants
@@ -353,8 +353,7 @@ class SoundboardWebApp:
                 detail="Volume must be between 0 and 100."
             )
 
-        old_volume = self._config_repo.get_volume()
-        self._config_repo.set_volume(volume)
+        old_volume = self._config_repo.set_volume(volume)
 
         # Publish event
         await self._event_bus.publish(ConfigEvent(
